@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 
 export const McpSchema = z.object({
   package: z.string().min(1),

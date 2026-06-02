@@ -1,4 +1,4 @@
-﻿export * from './types/mcp.js'
+export * from './types/mcp.js'
 export * from './types/client.js'
 export * from './types/assignment.js'
 export * from './types/desired-state.js'

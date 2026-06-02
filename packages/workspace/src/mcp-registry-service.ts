@@ -1,4 +1,4 @@
-﻿import type { ConfigLoader, McpspaceConfig } from '@mcpspace/core'
+import type { ConfigLoader, McpspaceConfig } from '@mcpspace/core'
 
 import { MCP_CATALOG } from './catalog.js'
 import type { DesiredStateRepository } from './types.js'

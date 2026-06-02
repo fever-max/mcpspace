@@ -1,4 +1,4 @@
-﻿export type PlanActionType = 'create' | 'update' | 'delete' | 'noop'
+export type PlanActionType = 'create' | 'update' | 'delete' | 'noop'
 
 export type PlanReasonCode =
   | 'MISSING_IN_ACTUAL'

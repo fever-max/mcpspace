@@ -1,3 +1,3 @@
-﻿export interface PlanCommandInput {
+export interface PlanCommandInput {
   client: string
 }

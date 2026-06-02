@@ -1,4 +1,4 @@
-﻿import type { ActualState, DesiredState } from '@mcpspace/shared'
+import type { ActualState, DesiredState } from '@mcpspace/shared'
 import type { SyncPlan } from './types.js'
 
 export interface Planner {

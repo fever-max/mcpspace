@@ -1,1 +1,1 @@
-﻿export interface StatusCommandInput {}
+export interface StatusCommandInput {}

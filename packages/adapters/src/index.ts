@@ -1,4 +1,4 @@
-﻿export * from './client-adapter.js'
+export * from './client-adapter.js'
 export * from './adapter-factory.js'
 export * from './adapter-types.js'
 export * from './shared/config-io.js'

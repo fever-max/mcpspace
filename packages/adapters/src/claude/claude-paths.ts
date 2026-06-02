@@ -1,4 +1,4 @@
-﻿import { selectPath } from '../shared/path-detection.js'
+import { selectPath } from '../shared/path-detection.js'
 
 export type ClaudePaths = {
   configPath: string

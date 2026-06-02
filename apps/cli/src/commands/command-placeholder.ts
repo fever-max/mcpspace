@@ -1,4 +1,4 @@
-﻿export interface CommandHandler {
+export interface CommandHandler {
   run(): Promise<void>
 }
 

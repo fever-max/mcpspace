@@ -1,3 +1,3 @@
-﻿export interface ConfigService {
+export interface ConfigService {
   getConfigPath(): string
 }

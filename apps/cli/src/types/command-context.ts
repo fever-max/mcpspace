@@ -1,4 +1,4 @@
-﻿export type CommandContext = {
+export type CommandContext = {
   cwd: string
   debug: boolean
 }

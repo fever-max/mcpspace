@@ -1,1 +1,1 @@
-﻿export interface McpListCommandInput {}
+export interface McpListCommandInput {}

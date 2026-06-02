@@ -1,4 +1,4 @@
-﻿import type { McpServerEntry } from './actual-state.js'
+import type { McpServerEntry } from './actual-state.js'
 
 export type SyncPlan = {
   clientName: string

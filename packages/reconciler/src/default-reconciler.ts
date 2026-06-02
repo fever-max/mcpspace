@@ -1,4 +1,4 @@
-﻿import type { ActualState, DesiredState, McpConfig, McpServerEntry } from '@mcpspace/shared'
+import type { ActualState, DesiredState, McpConfig, McpServerEntry } from '@mcpspace/shared'
 
 import { ReconcileError } from './errors.js'
 import type { Planner } from './planner.js'

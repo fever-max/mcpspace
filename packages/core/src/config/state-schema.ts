@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 
 export const LastSyncSchema = z.record(z.string().datetime({ offset: true }))
 

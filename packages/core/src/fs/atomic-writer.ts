@@ -1,4 +1,4 @@
-﻿import { rename, writeFile } from 'node:fs/promises'
+import { rename, writeFile } from 'node:fs/promises'
 
 export interface AtomicWriter {
   write(path: string, content: string): Promise<void>

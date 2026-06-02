@@ -1,4 +1,4 @@
-﻿import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 
 export interface ConfigIO {
   read(path: string): Promise<string>

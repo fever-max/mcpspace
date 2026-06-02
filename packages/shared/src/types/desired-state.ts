@@ -1,4 +1,4 @@
-﻿import type { McpConfig } from './mcp.js'
+import type { McpConfig } from './mcp.js'
 
 export type DesiredState = {
   version: string

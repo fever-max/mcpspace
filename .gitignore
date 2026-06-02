@@ -1,4 +1,4 @@
-﻿# dependencies
+# dependencies
 node_modules/
 .pnpm-store/
 
@@ -47,10 +47,10 @@ package-lock.json
 *.tgz
 
 # docs and agent
-docs/
+docs/*
+!docs/desktop-mvp-spec.md
 AGENT.md
 rules/
 
 # user config
 .mcpspace/
-

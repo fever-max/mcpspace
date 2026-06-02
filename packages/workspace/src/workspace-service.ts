@@ -1,4 +1,4 @@
-﻿import type { AdapterFactory } from '@mcpspace/adapters'
+import type { AdapterFactory } from '@mcpspace/adapters'
 import type { ConfigLoader, McpspaceConfig, StateRepository } from '@mcpspace/core'
 import type { ActualState } from '@mcpspace/shared'
 import type { Reconciler, SyncPlan } from '@mcpspace/reconciler'

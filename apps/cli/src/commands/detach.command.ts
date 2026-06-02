@@ -1,4 +1,4 @@
-﻿export interface DetachCommandInput {
+export interface DetachCommandInput {
   mcp: string
   client: string
 }

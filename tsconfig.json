@@ -1,4 +1,4 @@
-﻿{
+{
   "files": [],
   "references": [
     { "path": "packages/shared" },
@@ -6,6 +6,7 @@
     { "path": "packages/adapters" },
     { "path": "packages/reconciler" },
     { "path": "packages/workspace" },
-    { "path": "apps/cli" }
+    { "path": "apps/cli" },
+    { "path": "apps/desktop" }
   ]
 }

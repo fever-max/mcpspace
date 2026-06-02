@@ -1,4 +1,4 @@
-﻿import type { ValidationResult } from '@mcpspace/shared'
+import type { ValidationResult } from '@mcpspace/shared'
 import { ClientConfigSchema } from './client-config-schema.js'
 
 export interface AdapterValidator {

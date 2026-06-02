@@ -1,4 +1,4 @@
-﻿export type AppConfig = {
+export type AppConfig = {
   configPath: string
   debug: boolean
 }

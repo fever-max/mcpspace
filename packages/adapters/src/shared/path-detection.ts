@@ -1,4 +1,4 @@
-﻿import { existsSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 export type CandidatePathSelection = {

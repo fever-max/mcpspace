@@ -1,3 +1,3 @@
-﻿export interface McpAddCommandInput {
+export interface McpAddCommandInput {
   name: string
 }

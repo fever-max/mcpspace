@@ -1,4 +1,4 @@
-﻿export type ReconcileErrorCode = 'CLIENT_NOT_FOUND' | 'INVALID_MCP_REFERENCE'
+export type ReconcileErrorCode = 'CLIENT_NOT_FOUND' | 'INVALID_MCP_REFERENCE'
 
 export class ReconcileError extends Error {
   constructor(

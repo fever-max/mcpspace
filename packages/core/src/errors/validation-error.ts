@@ -1,4 +1,4 @@
-﻿export interface ValidationErrorShape {
+export interface ValidationErrorShape {
   code: 'VALIDATION_ERROR'
   message: string
 }

@@ -1,4 +1,4 @@
-﻿export interface PathResolver {
+export interface PathResolver {
   getProjectConfigPath(options?: {
     cwd?: string
     explicitConfigPath?: string

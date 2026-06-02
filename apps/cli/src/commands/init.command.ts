@@ -1,1 +1,1 @@
-﻿export interface InitCommandInput {}
+export interface InitCommandInput {}

@@ -1,4 +1,4 @@
-﻿export interface SyncCommandInput {
+export interface SyncCommandInput {
   client?: string
   all?: boolean
 }

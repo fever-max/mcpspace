@@ -1,1 +1,1 @@
-﻿export interface VersionCommandInput {}
+export interface VersionCommandInput {}

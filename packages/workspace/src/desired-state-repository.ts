@@ -1,4 +1,4 @@
-﻿import { mkdir } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { stringify } from 'yaml'
 

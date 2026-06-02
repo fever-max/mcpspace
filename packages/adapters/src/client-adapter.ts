@@ -1,4 +1,4 @@
-﻿import type { ActualState, ValidationResult } from '@mcpspace/shared'
+import type { ActualState, ValidationResult } from '@mcpspace/shared'
 import type { AdapterCapabilities } from './adapter-types.js'
 
 export type AdapterPlanEntry = {

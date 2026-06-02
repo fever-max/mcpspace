@@ -1,4 +1,4 @@
-﻿export interface McpRemoveCommandInput {
+export interface McpRemoveCommandInput {
   name: string
   force?: boolean
 }

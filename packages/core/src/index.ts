@@ -1,4 +1,4 @@
-﻿export * from './config/config-loader.js'
+export * from './config/config-loader.js'
 export * from './config/config-schema.js'
 export * from './config/state-schema.js'
 export * from './errors/mcpspace-error.js'

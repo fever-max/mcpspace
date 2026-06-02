@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 import { McpSchema } from './mcp.schema.js'
 
 export const DesiredStateSchema = z.object({

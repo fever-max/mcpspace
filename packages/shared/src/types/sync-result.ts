@@ -1,4 +1,4 @@
-﻿import type { SyncPlan } from './sync-plan.js'
+import type { SyncPlan } from './sync-plan.js'
 
 export type SyncResult = {
   clientName: string

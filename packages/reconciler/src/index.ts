@@ -1,4 +1,4 @@
-﻿export * from './reconciler.js'
+export * from './reconciler.js'
 export * from './planner.js'
 export * from './types.js'
 export * from './errors.js'

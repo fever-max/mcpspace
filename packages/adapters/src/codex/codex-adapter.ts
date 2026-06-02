@@ -1,4 +1,4 @@
-﻿import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname } from 'node:path'
 
 import * as TOML from '@iarna/toml'

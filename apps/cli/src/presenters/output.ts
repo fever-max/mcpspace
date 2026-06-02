@@ -1,3 +1,3 @@
-﻿export type OutputMessage = {
+export type OutputMessage = {
   message: string
 }

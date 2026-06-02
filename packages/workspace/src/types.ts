@@ -1,4 +1,4 @@
-﻿import type { McpspaceConfig, StateModel } from '@mcpspace/core'
+import type { McpspaceConfig, StateModel } from '@mcpspace/core'
 import type { ActualState } from '@mcpspace/shared'
 
 export type ClientStatusView = {

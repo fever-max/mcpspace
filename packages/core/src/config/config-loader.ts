@@ -1,4 +1,4 @@
-﻿import { existsSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { parse as parseYaml } from 'yaml'

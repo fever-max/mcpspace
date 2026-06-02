@@ -1,4 +1,4 @@
-﻿export type McpServerEntry = {
+export type McpServerEntry = {
   name: string
   command: string
   args: string[]
