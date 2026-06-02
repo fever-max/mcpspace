@@ -48,7 +48,7 @@ class CliPathResolver implements PathResolver {
       return options.envConfigPath
     }
 
-    return resolve(options?.cwd ?? process.cwd(), 'mcpspace.yaml')
+    return resolve(options?.cwd ?? process.cwd(), '.mcpspace', 'config.yaml')
   }
 
   getGlobalConfigPath(): string {
@@ -127,4 +127,3 @@ export const createServices = (): CliServices => {
     version: '0.1.0',
   }
 }
-

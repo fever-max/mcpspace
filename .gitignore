@@ -1,4 +1,4 @@
-# dependencies
+﻿# dependencies
 node_modules/
 .pnpm-store/
 
@@ -39,7 +39,6 @@ Desktop.ini
 *.temp
 
 package-lock.json
-mcpspace.yaml
 
 # claude code settings
 .claude/
@@ -51,3 +50,7 @@ mcpspace.yaml
 docs/
 AGENT.md
 rules/
+
+# user config
+.mcpspace/
+

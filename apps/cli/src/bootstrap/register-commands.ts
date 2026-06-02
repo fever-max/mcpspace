@@ -1,6 +1,6 @@
 ﻿import { existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import { Command } from 'commander'
 
 import type { PlanAction, SyncPlan } from '@mcpspace/reconciler'
@@ -47,15 +47,16 @@ export const registerCommands = (
 ): void => {
   program
     .command('init')
-    .description('create mcpspace.yaml in current directory')
+    .description('create .mcpspace/config.yaml in current directory')
     .action(async () => {
       try {
-        const targetPath = resolve(process.cwd(), 'mcpspace.yaml')
+        const targetPath = resolve(process.cwd(), '.mcpspace', 'config.yaml')
         if (existsSync(targetPath)) {
-          throw new Error(`mcpspace.yaml already exists: ${targetPath}`)
+          throw new Error(`.mcpspace/config.yaml already exists: ${targetPath}`)
         }
 
         const content = ['version: "1"', '', 'mcps: {}', '', 'clients: {}', ''].join('\n')
+        await mkdir(dirname(targetPath), { recursive: true })
         await writeFile(targetPath, content, 'utf-8')
         console.log(`Created: ${targetPath}`)
       } catch (error) {
@@ -219,4 +220,3 @@ export const registerCommands = (
       }
     })
 }
-

@@ -1,5 +1,6 @@
 ﻿import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import { parse as parseYaml } from 'yaml'
 
 import type { PathResolver } from '../paths/path-resolver.js'
@@ -25,6 +26,25 @@ export class FileConfigLoader implements ConfigLoader {
 
   async loadProjectConfig(options?: ConfigLoaderOptions): Promise<McpspaceConfig> {
     const sources = this.resolveSources(options)
+
+    if (existsSync(sources.projectConfigPath)) {
+      const raw = await this.readYamlFile(sources.projectConfigPath)
+      return McpspaceConfigSchema.parse(raw)
+    }
+
+    const hasExplicitOverride = Boolean(options?.configPath || this.env.MCPSPACE_CONFIG_PATH)
+    if (!hasExplicitOverride) {
+      const legacyProjectConfigPath = resolve(
+        dirname(dirname(sources.projectConfigPath)),
+        'mcpspace.yaml',
+      )
+
+      if (existsSync(legacyProjectConfigPath)) {
+        const raw = await this.readYamlFile(legacyProjectConfigPath)
+        return McpspaceConfigSchema.parse(raw)
+      }
+    }
+
     const raw = await this.readYamlFile(sources.projectConfigPath)
     return McpspaceConfigSchema.parse(raw)
   }
@@ -58,4 +78,3 @@ export class FileConfigLoader implements ConfigLoader {
     return parseYaml(raw)
   }
 }
-
