@@ -1,0 +1,20 @@
+﻿{
+  "name": "@mcpspace/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mcpspace/shared": "file:../../packages/shared",
+    "@mcpspace/core": "file:../../packages/core",
+    "@mcpspace/adapters": "file:../../packages/adapters",
+    "@mcpspace/reconciler": "file:../../packages/reconciler",
+    "@mcpspace/workspace": "file:../../packages/workspace",
+    "commander": "^12.1.0"
+  }
+}
+

@@ -1,0 +1,24 @@
+﻿{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mcpspace/shared": ["packages/shared/src/index.ts"],
+      "@mcpspace/core": ["packages/core/src/index.ts"],
+      "@mcpspace/adapters": ["packages/adapters/src/index.ts"],
+      "@mcpspace/reconciler": ["packages/reconciler/src/index.ts"]
+    }
+  }
+}
+

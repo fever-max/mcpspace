@@ -1,0 +1,7 @@
+﻿export const EXIT_CODES = {
+  SUCCESS: 0,
+  RUNTIME_ERROR: 1,
+  VALIDATION_ERROR: 2,
+  NOT_FOUND: 3,
+  STATE_ERROR: 4,
+} as const

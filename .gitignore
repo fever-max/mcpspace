@@ -1,0 +1,53 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+build/
+coverage/
+.cache/
+
+# typescript
+*.tsbuildinfo
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env
+.env
+.env.*
+
+# vscode
+.vscode/
+.idea/
+
+# mac
+.DS_Store
+
+# windows
+Thumbs.db
+Desktop.ini
+
+# temporary files
+*.tmp
+*.temp
+
+package-lock.json
+mcpspace.yaml
+
+# claude code settings
+.claude/
+
+# npm pack artifacts
+*.tgz
+
+# docs and agent
+docs/
+AGENT.md
+rules/

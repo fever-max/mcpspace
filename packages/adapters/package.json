@@ -1,0 +1,24 @@
+﻿{
+  "name": "@mcpspace/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mcpspace/shared": "file:../shared",
+    "@mcpspace/core": "file:../core",
+    "@iarna/toml": "^2.2.5",
+    "zod": "^3.23.8"
+  }
+}
+
