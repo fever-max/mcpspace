@@ -1,5 +1,7 @@
 # mcpspace
 
+![mcpspace](assets/img/info.png)
+
 AI 클라이언트(Claude, Cursor, Codex)의 MCP 툴을 하나의 설정으로 관리하는 툴.
 
 CLI와 Desktop 앱 두 가지 방식을 지원한다.
