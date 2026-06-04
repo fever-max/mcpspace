@@ -1,9 +1,12 @@
-export type ClientId = 'claude-desktop' | 'claude-code' | 'codex' | 'cursor'
+﻿export type ClientId = 'claude-desktop' | 'claude-code' | 'codex' | 'cursor'
+
+export type WorkspaceContextStatus = 'not_initialized' | 'ready'
 
 export type WorkspaceContextDto = {
   path: string
   name: string
   configPath: string
+  status: WorkspaceContextStatus
   isOpen: boolean
 }
 

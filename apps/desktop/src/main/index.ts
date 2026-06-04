@@ -1,11 +1,12 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+﻿import { app, BrowserWindow, ipcMain } from 'electron'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { registerWorkspaceCurrentIpc } from './ipc/workspace.ipc.js'
+import { registerWorkspaceIpc } from './ipc/workspace.ipc.js'
 import { createDesktopServices } from './services/create-desktop-services.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? process.env.VITE_DEV_SERVER_URL
 
 const createWindow = async (): Promise<any> => {
   const window = new BrowserWindow({
@@ -15,15 +16,15 @@ const createWindow = async (): Promise<any> => {
     minHeight: 800,
     title: 'mcpspace',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
     },
   })
 
-  if (!app.isPackaged && process.env.VITE_DEV_SERVER_URL) {
-    await window.loadURL(process.env.VITE_DEV_SERVER_URL)
+  if (!app.isPackaged && rendererUrl) {
+    await window.loadURL(rendererUrl)
     return window
   }
 
@@ -33,7 +34,7 @@ const createWindow = async (): Promise<any> => {
 
 const start = async (): Promise<void> => {
   const services = createDesktopServices()
-  registerWorkspaceCurrentIpc(services, ipcMain)
+  registerWorkspaceIpc(services, ipcMain)
 
   await app.whenReady()
   await createWindow()
