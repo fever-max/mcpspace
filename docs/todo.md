@@ -153,7 +153,12 @@
 ### 배포
 
 - [ ] macOS `npm install -g` 검증
-- [ ] Desktop 빌드/패키징 구조 결정 (electron-builder vs electron-forge)
+- [ ] Desktop 빌드/패키징 구조 결정 → `electron-builder` 사용
+  - `apps/desktop/package.json`에 `build` 설정 추가 (appId, productName, win/mac 타겟)
+  - Windows: `target: "nsis"` → 설치형 exe 생성
+  - macOS: `target: "dmg"`
+  - 루트 `package.json`에 `desktop:package` 스크립트 추가: `electron-vite build && electron-builder`
+  - 빌드 결과물은 `apps/desktop/dist/` 에 생성 (gitignore 추가 필요)
 
 ### Catalog
 
