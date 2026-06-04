@@ -1,8 +1,8 @@
 # mcpspace
 
-AI 클라이언트(Claude, Cursor, Codex)의 MCP 툴을 하나의 설정으로 관리하는 툴이에요.
+AI 클라이언트(Claude, Cursor, Codex)의 MCP 툴을 하나의 설정으로 관리하는 툴.
 
-CLI로 터미널에서 쓸 수도 있고, Desktop 앱으로 GUI에서 관리할 수도 있어요.
+CLI와 Desktop 앱 두 가지 방식을 지원한다.
 
 ---
 
@@ -106,7 +106,7 @@ mcpspace mcp add my-tool \
 
 ## Desktop App
 
-GUI로 MCP 툴과 AI 클라이언트를 관리할 수 있는 Electron 앱이에요.
+GUI로 MCP 툴과 AI 클라이언트를 관리하는 Electron 앱.
 
 ### 개발 모드 실행
 
