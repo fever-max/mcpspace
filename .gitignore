@@ -50,6 +50,7 @@ package-lock.json
 # docs and agent
 docs/*
 !docs/desktop-mvp-spec.md
+!docs/todo.md
 AGENT.md
 rules/
 
