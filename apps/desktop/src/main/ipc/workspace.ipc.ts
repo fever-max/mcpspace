@@ -1,11 +1,13 @@
-﻿import { BrowserWindow, dialog, type IpcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
+import { BrowserWindow, clipboard, dialog, shell, type IpcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
 
 import { IPC_CHANNELS } from './channels.js'
 import type {
+  WorkspaceCopyPathResponse,
   WorkspaceCurrentResponse,
   WorkspaceInitErrorCode,
   WorkspaceInitResponse,
   WorkspaceOpenErrorCode,
+  WorkspaceOpenInExplorerResponse,
   WorkspaceOpenResponse,
   WorkspaceStatusErrorCode,
   WorkspaceStatusResponse,
@@ -83,6 +85,36 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
       return ok(status)
     } catch (error) {
       return fail(toStatusError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.copyPath, async (_event, path: string): Promise<WorkspaceCopyPathResponse> => {
+    try {
+      if (!path) {
+        return fail('UNKNOWN_ERROR', 'Workspace path is required.')
+      }
+
+      clipboard.writeText(path)
+      return ok(undefined)
+    } catch (error) {
+      return fail('UNKNOWN_ERROR', error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.openInExplorer, async (_event, path: string): Promise<WorkspaceOpenInExplorerResponse> => {
+    try {
+      if (!path) {
+        return fail('UNKNOWN_ERROR', 'Workspace path is required.')
+      }
+
+      const result = await shell.openPath(path)
+      if (result) {
+        return fail('OPEN_IN_EXPLORER_FAILED', result)
+      }
+
+      return ok(undefined)
+    } catch (error) {
+      return fail('UNKNOWN_ERROR', error instanceof Error ? error.message : 'Unknown error')
     }
   })
 }

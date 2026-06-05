@@ -239,11 +239,37 @@ const renderProjectStrip = (workspace: WorkspaceContextDto): string => `
       <div class="strip-value">${workspace.path}</div>
     </div>
     <div class="project-strip-actions">
-      <button class="button secondary icon-button" type="button" aria-label="Copy project path" title="Copy project path"><span class="button-icon">${icon.copy}</span></button>
-      <button class="button secondary icon-button" type="button" aria-label="Open in Explorer" title="Open in Explorer"><span class="button-icon">${icon.open}</span></button>
+      <button data-action="copy-project-path" class="button secondary icon-button" type="button" aria-label="Copy project path" title="Copy project path" ${disabledAttr(state.loading)}><span class="button-icon">${icon.copy}</span></button>
+      <button data-action="open-in-explorer" class="button secondary icon-button" type="button" aria-label="Open in Explorer" title="Open in Explorer" ${disabledAttr(state.loading)}><span class="button-icon">${icon.open}</span></button>
     </div>
   </section>
 `
+const copyCurrentProjectPath = async (): Promise<void> => {
+  const workspace = state.workspace
+  if (!workspace) {
+    return
+  }
+
+  const result = await window.mcpspace.workspace.copyPath(workspace.path)
+  if (!result.ok) {
+    state.error = result.error.message
+    render()
+  }
+}
+
+const openCurrentProjectInExplorer = async (): Promise<void> => {
+  const workspace = state.workspace
+  if (!workspace) {
+    return
+  }
+
+  const result = await window.mcpspace.workspace.openInExplorer(workspace.path)
+  if (!result.ok) {
+    state.error = result.error.message
+    render()
+  }
+}
+
 const renderSidebarWorkspace = (): string => {
   if (!state.workspace) {
     return `
@@ -539,6 +565,18 @@ const bindActionHandlers = (): void => {
   document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace"]').forEach((button) => {
     button.addEventListener('click', async () => {
       await openWorkspace()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="copy-project-path"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      await copyCurrentProjectPath()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-in-explorer"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      await openCurrentProjectInExplorer()
     })
   })
 

@@ -22,7 +22,15 @@ export type WorkspaceStatusErrorCode =
   | 'VALIDATION_FAILED'
   | 'UNKNOWN_ERROR'
 
+export type WorkspaceCopyPathErrorCode = 'UNKNOWN_ERROR'
+
+export type WorkspaceOpenInExplorerErrorCode =
+  | 'OPEN_IN_EXPLORER_FAILED'
+  | 'UNKNOWN_ERROR'
+
 export type WorkspaceOpenResponse = IpcResult<WorkspaceContextDto | null, WorkspaceOpenErrorCode>
 export type WorkspaceInitResponse = IpcResult<WorkspaceContextDto, WorkspaceInitErrorCode>
 export type WorkspaceCurrentResponse = IpcResult<WorkspaceContextDto | null, WorkspaceCurrentErrorCode>
 export type WorkspaceStatusResponse = IpcResult<WorkspaceStatusDto, WorkspaceStatusErrorCode>
+export type WorkspaceCopyPathResponse = IpcResult<void, WorkspaceCopyPathErrorCode>
+export type WorkspaceOpenInExplorerResponse = IpcResult<void, WorkspaceOpenInExplorerErrorCode>

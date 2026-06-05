@@ -8,6 +8,8 @@ const api = {
     init: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.init),
     current: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.current),
     status: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.status),
+    copyPath: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.workspace.copyPath, path),
+    openInExplorer: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.workspace.openInExplorer, path),
   },
 }
 

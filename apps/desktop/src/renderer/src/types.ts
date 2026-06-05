@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   IpcResult,
   WorkspaceContextDto,
   WorkspaceStatusDto,
@@ -12,6 +12,8 @@ declare global {
         init(): Promise<IpcResult<WorkspaceContextDto>>
         current(): Promise<IpcResult<WorkspaceContextDto | null>>
         status(): Promise<IpcResult<WorkspaceStatusDto>>
+        copyPath(path: string): Promise<IpcResult<void>>
+        openInExplorer(path: string): Promise<IpcResult<void>>
       }
     }
   }
