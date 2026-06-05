@@ -2,9 +2,113 @@
 
 ![mcpspace](assets/img/info.png)
 
-AI 클라이언트(Claude, Cursor, Codex)의 MCP 툴을 하나의 설정으로 관리하는 툴.
+A CLI and Desktop app for managing MCP tools across AI clients (Claude, Cursor, Codex) with a single configuration.
 
-CLI와 Desktop 앱 두 가지 방식을 지원한다.
+---
+
+## CLI
+
+### Installation
+
+```bash
+npm install -g mcpspace
+```
+
+**Requirements:** Node.js 22+
+
+### Quick Start
+
+```bash
+mcpspace init
+mcpspace mcp add filesystem
+mcpspace attach filesystem claude-code
+mcpspace sync claude-code
+mcpspace status
+```
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `mcpspace init` | Create `.mcpspace/config.yaml` in the current directory |
+| `mcpspace mcp add <tool>` | Register an MCP tool |
+| `mcpspace mcp remove <tool>` | Remove an MCP tool |
+| `mcpspace mcp list` | List registered MCP tools |
+| `mcpspace attach <tool> <client>` | Attach a tool to a client |
+| `mcpspace detach <tool> <client>` | Detach a tool from a client |
+| `mcpspace plan <client>` | Preview pending changes |
+| `mcpspace sync <client>` | Apply changes to the client config |
+| `mcpspace status` | Show sync status across all clients |
+
+### Adding MCP Tools
+
+From the catalog:
+
+```bash
+mcpspace mcp add filesystem
+mcpspace mcp add github
+mcpspace mcp add postgres
+```
+
+Custom tool:
+
+```bash
+mcpspace mcp add my-tool \
+  --command npx \
+  --arg -y \
+  --arg @myorg/my-mcp-server \
+  --env API_KEY=mykey
+```
+
+### Supported Clients
+
+| Client | ID |
+|---|---|
+| Claude Desktop | `claude-desktop` |
+| Claude Code | `claude-code` |
+| Codex | `codex` |
+| Cursor | `cursor` |
+
+### How It Works
+
+- `attach` / `detach` — Updates Desired State only. Does not touch client configs directly.
+- `sync` — Applies Desired State to the actual client config. Automatically restores on failure.
+- `plan` — Preview what `sync` will do before running it.
+- `status` — Check whether each client is in sync with the Desired State.
+
+---
+
+## Desktop App
+
+A GUI Electron app for managing MCP tools and AI clients.
+
+### Dev Mode
+
+```bash
+npm install
+npm run desktop:dev
+```
+
+### Screens
+
+- **Empty State** — Select a workspace folder to get started
+- **Not Initialized** — Folder selected but no `.mcpspace/config.yaml` yet. Click `Initialize Workspace` to create it.
+- **Ready** — Select an AI client, manage its MCP tools, and apply changes.
+
+---
+
+## Troubleshooting
+
+**`mcpspace` command not found**
+- Re-run `npm link` and open a new terminal
+- Check that the npm global bin path is in your PATH
+
+**PowerShell execution policy error (Windows)**
+- Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+**In Sync but MCP not showing in client**
+- Restart the client app
+- Make sure `sync` was run from the same project path the client is using
 
 ---
 
@@ -16,32 +120,15 @@ CLI와 Desktop 앱 두 가지 방식을 지원한다.
 npm install -g mcpspace
 ```
 
-로컬 개발 시:
-
-```bash
-npm install
-npm run build
-npm link
-```
-
 **요구 사항:** Node.js 22+
 
 ### 빠른 시작
 
 ```bash
-# 1. 프로젝트 폴더에서 초기화
 mcpspace init
-
-# 2. MCP 툴 등록
 mcpspace mcp add filesystem
-
-# 3. AI 클라이언트에 연결
 mcpspace attach filesystem claude-code
-
-# 4. 실제 클라이언트 설정에 반영
 mcpspace sync claude-code
-
-# 5. 상태 확인
 mcpspace status
 ```
 
@@ -53,15 +140,15 @@ mcpspace status
 | `mcpspace mcp add <tool>` | MCP 툴 등록 |
 | `mcpspace mcp remove <tool>` | MCP 툴 제거 |
 | `mcpspace mcp list` | 등록된 MCP 툴 목록 |
-| `mcpspace attach <tool> <client>` | 툴을 클라이언트에 연결 (Desired State 변경) |
-| `mcpspace detach <tool> <client>` | 툴을 클라이언트에서 해제 (Desired State 변경) |
+| `mcpspace attach <tool> <client>` | 툴을 클라이언트에 연결 |
+| `mcpspace detach <tool> <client>` | 툴을 클라이언트에서 해제 |
 | `mcpspace plan <client>` | 변경 예정 사항 미리보기 |
 | `mcpspace sync <client>` | 실제 클라이언트 설정에 반영 |
 | `mcpspace status` | 전체 동기화 상태 확인 |
 
 ### MCP 툴 등록
 
-카탈로그에 있는 툴:
+카탈로그 툴:
 
 ```bash
 mcpspace mcp add filesystem
@@ -79,15 +166,6 @@ mcpspace mcp add my-tool \
   --env API_KEY=mykey
 ```
 
-옵션:
-
-| 옵션 | 설명 |
-|---|---|
-| `--command <cmd>` | 실행 명령 (커스텀 툴 필수) |
-| `--package <pkg>` | 패키지명 (선택) |
-| `--arg <value>` | 인자 (반복 가능) |
-| `--env <KEY=VALUE>` | 환경변수 (반복 가능) |
-
 ### 지원 클라이언트
 
 | 클라이언트 | ID |
@@ -99,10 +177,10 @@ mcpspace mcp add my-tool \
 
 ### 핵심 개념
 
-- `attach` / `detach` — `.mcpspace/config.yaml`의 Desired State만 변경. 실제 클라이언트 설정은 건드리지 않음
+- `attach` / `detach` — Desired State만 변경. 실제 클라이언트 설정은 건드리지 않음
 - `sync` — Desired State를 실제 클라이언트 설정에 반영. 실패 시 자동 복원
-- `plan` — sync 전에 변경 사항을 미리 확인
-- `status` — 각 클라이언트가 Desired State와 동기화된 상태인지 확인
+- `plan` — sync 전에 변경 사항 미리 확인
+- `status` — 각 클라이언트가 Desired State와 동기화됐는지 확인
 
 ---
 
@@ -119,15 +197,9 @@ npm run desktop:dev
 
 ### 화면 구성
 
-**Empty State** — workspace 폴더를 선택하지 않은 초기 상태
-
-**Not Initialized** — 폴더는 선택됐지만 `.mcpspace/config.yaml`이 없는 상태
-- `Initialize Workspace` 버튼으로 설정 파일 생성
-
-**Ready** — 초기화된 workspace
-- AI 클라이언트 목록에서 클라이언트 선택
-- 선택한 클라이언트에 연결된 MCP 툴 확인 및 변경
-- Changes to Apply에서 변경 예정 사항 확인 후 적용
+- **Empty State** — workspace 폴더를 선택하지 않은 초기 상태
+- **Not Initialized** — 폴더는 선택됐지만 `.mcpspace/config.yaml`이 없는 상태. `Initialize Workspace`로 생성.
+- **Ready** — AI 클라이언트 선택 후 MCP 툴 관리 및 변경 적용.
 
 ---
 

@@ -1,7 +1,6 @@
 {
     "name":  "mcpspace",
-    "version":  "0.1.1",
-    "readme":  "apps/cli/README.md",
+    "version":  "0.1.2",
     "packageManager":  "pnpm@9.0.0",
     "workspaces":  [
                        "apps/*",
@@ -20,7 +19,6 @@
     "files":  [
                   "apps/cli/dist/**",
                   "apps/cli/package.json",
-                  "apps/cli/README.md",
                   "packages/*/dist/**",
                   "packages/*/package.json",
                   "README.md"
