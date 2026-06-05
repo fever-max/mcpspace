@@ -19,6 +19,7 @@ export type McpListItem = {
 
 export interface McpRegistryService {
   add(toolName: string, options?: McpAddOptions): Promise<McpspaceConfig>
+  update(toolName: string, nextToolName: string, options?: McpAddOptions): Promise<McpspaceConfig>
   remove(toolName: string): Promise<McpspaceConfig>
   list(): Promise<McpListItem[]>
 }
@@ -31,32 +32,41 @@ export class DefaultMcpRegistryService implements McpRegistryService {
 
   async add(toolName: string, options: McpAddOptions = {}): Promise<McpspaceConfig> {
     const config = await this.configLoader.loadProjectConfig()
-
     if (config.mcps[toolName]) {
       throw new Error(`MCP '${toolName}' is already registered.`)
     }
 
-    const catalogEntry = MCP_CATALOG[toolName]
+    config.mcps[toolName] = this.buildMcpEntry(toolName, options)
 
-    if (catalogEntry) {
-      config.mcps[toolName] = {
-        package: options.package ?? catalogEntry.package,
-        command: catalogEntry.command,
-        args: [...catalogEntry.args],
-        env: { ...catalogEntry.env },
+    await this.desiredStateRepository.save(config)
+    return config
+  }
+
+  async update(toolName: string, nextToolName: string, options: McpAddOptions = {}): Promise<McpspaceConfig> {
+    const config = await this.configLoader.loadProjectConfig()
+
+    if (!config.mcps[toolName]) {
+      throw new Error(`MCP '${toolName}' is not registered.`)
+    }
+
+    if (toolName !== nextToolName && config.mcps[nextToolName]) {
+      throw new Error(`MCP '${nextToolName}' is already registered.`)
+    }
+
+    const currentEntry = config.mcps[toolName]
+    const entry = this.mergeMcpEntry(toolName, currentEntry, nextToolName, options)
+    const clients = Object.entries(config.clients)
+      .filter(([, state]) => state.mcps.includes(toolName))
+      .map(([client]) => client)
+
+    delete config.mcps[toolName]
+    config.mcps[nextToolName] = entry
+
+    if (toolName !== nextToolName) {
+      for (const clientName of clients) {
+        const client = config.clients[clientName]
+        client.mcps = client.mcps.map((value) => (value === toolName ? nextToolName : value))
       }
-    } else if (options.command) {
-      config.mcps[toolName] = {
-        package: options.package ?? '',
-        command: options.command,
-        args: options.args ? [...options.args] : [],
-        env: options.env ? { ...options.env } : {},
-      }
-    } else {
-      throw new Error(
-        `Unknown MCP '${toolName}'. Use --command to register a custom MCP.\n` +
-          `Example: mcpspace mcp add ${toolName} --command npx --arg -y --arg ${toolName}`,
-      )
     }
 
     await this.desiredStateRepository.save(config)
@@ -103,6 +113,52 @@ export class DefaultMcpRegistryService implements McpRegistryService {
 
     items.sort((a, b) => a.toolName.localeCompare(b.toolName))
     return items
+  }
+
+  private buildMcpEntry(toolName: string, options: McpAddOptions): McpspaceConfig['mcps'][string] {
+    const catalogEntry = MCP_CATALOG[toolName]
+
+    if (catalogEntry) {
+      return {
+        package: options.package ?? catalogEntry.package,
+        command: catalogEntry.command,
+        args: [...catalogEntry.args],
+        env: { ...catalogEntry.env },
+      }
+    }
+
+    if (options.command) {
+      return {
+        package: options.package ?? '',
+        command: options.command,
+        args: options.args ? [...options.args] : [],
+        env: options.env ? { ...options.env } : {},
+      }
+    }
+
+    throw new Error(
+      `Unknown MCP '${toolName}'. Use --command to register a custom MCP.\n` +
+        `Example: mcpspace mcp add ${toolName} --command npx --arg -y --arg ${toolName}`,
+    )
+  }
+
+  private mergeMcpEntry(
+    toolName: string,
+    currentEntry: McpspaceConfig['mcps'][string],
+    nextToolName: string,
+    options: McpAddOptions,
+  ): McpspaceConfig['mcps'][string] {
+    if (toolName === nextToolName) {
+      const catalogEntry = MCP_CATALOG[nextToolName]
+      return {
+        package: options.package ?? currentEntry.package ?? catalogEntry?.package ?? '',
+        command: options.command ?? currentEntry.command ?? catalogEntry?.command ?? '',
+        args: options.args ? [...options.args] : [...(currentEntry.args ?? catalogEntry?.args ?? [])],
+        env: options.env ? { ...options.env } : { ...(currentEntry.env ?? catalogEntry?.env ?? {}) },
+      }
+    }
+
+    return this.buildMcpEntry(nextToolName, options)
   }
 }
 

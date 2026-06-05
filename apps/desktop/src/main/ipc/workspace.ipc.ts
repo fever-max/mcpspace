@@ -2,16 +2,28 @@ import { BrowserWindow, clipboard, dialog, shell, type IpcMain, type IpcMainInvo
 
 import { IPC_CHANNELS } from './channels.js'
 import type {
+  WorkspaceAttachDetachErrorCode,
+  WorkspaceAttachResponse,
   WorkspaceCopyPathResponse,
   WorkspaceCurrentResponse,
+  WorkspaceDetachResponse,
+  WorkspaceMcpAddOptions,
+  WorkspaceMcpMutationErrorCode,
+  WorkspaceMcpMutationResponse,
+  WorkspaceMcpUpdateResponse,
   WorkspaceInitErrorCode,
   WorkspaceInitResponse,
+  WorkspacePlanErrorCode,
+  WorkspacePlanResponse,
+  WorkspaceSyncErrorCode,
+  WorkspaceSyncResponse,
   WorkspaceOpenErrorCode,
   WorkspaceOpenInExplorerResponse,
   WorkspaceOpenResponse,
   WorkspaceStatusErrorCode,
   WorkspaceStatusResponse,
 } from './types.js'
+import type { SyncPlanDto } from '../../shared/dtos.js'
 import type { DesktopServices } from '../services/create-desktop-services.js'
 
 const ok = <T>(data: T) => ({ ok: true as const, data })
@@ -42,6 +54,103 @@ const toStatusError = (error: unknown): WorkspaceStatusErrorCode => {
   if (message.toLowerCase().includes('validation failed')) return 'VALIDATION_FAILED'
   return 'UNKNOWN_ERROR'
 }
+
+const toAttachDetachError = (error: unknown): WorkspaceAttachDetachErrorCode => {
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
+  if (message.includes('Workspace is not initialized.')) return 'WORKSPACE_NOT_INITIALIZED'
+  if (message.includes('is not registered')) return 'TOOL_NOT_FOUND'
+  return 'UNKNOWN_ERROR'
+}
+
+const toPlanError = (error: unknown): WorkspacePlanErrorCode => {
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
+  if (message.includes('Workspace is not initialized.')) return 'WORKSPACE_NOT_INITIALIZED'
+  return 'UNKNOWN_ERROR'
+}
+
+const toSyncError = (error: unknown): WorkspaceSyncErrorCode => {
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
+  if (message.includes('Workspace is not initialized.')) return 'WORKSPACE_NOT_INITIALIZED'
+  if (message.includes('is not detected')) return 'CLIENT_NOT_DETECTED'
+  if (message.toLowerCase().includes('validation failed')) return 'VALIDATION_FAILED'
+  if (message.toLowerCase().includes('restore')) return 'RESTORE_FAILED'
+  return 'UNKNOWN_ERROR'
+}
+
+const toMcpMutationError = (error: unknown): WorkspaceMcpMutationErrorCode => {
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
+  if (message.includes('Workspace is not initialized.')) return 'WORKSPACE_NOT_INITIALIZED'
+  if (message.includes('already registered')) return 'MCP_ALREADY_EXISTS'
+  if (message.includes('not registered')) return 'MCP_NOT_FOUND'
+  if (message.includes('assigned to')) return 'MCP_ASSIGNED'
+  return 'UNKNOWN_ERROR'
+}
+
+const mapPlanActionType = (type: string): SyncPlanDto['actions'][number]['type'] => {
+  if (type === 'create' || type === 'update' || type === 'delete' || type === 'noop') {
+    return type
+  }
+
+  return 'noop'
+}
+
+const mapSyncPlan = (plan: {
+  clientName: string
+  actions: Array<{
+    type: string
+    toolName: string
+    reasonCode: string
+    reason: string
+    desiredEntry?: {
+      command: string
+      args: string[]
+      env?: Record<string, string>
+    }
+    actualEntry?: {
+      command: string
+      args: string[]
+      env?: Record<string, string>
+    }
+  }>
+  summary: {
+    create: number
+    update: number
+    delete: number
+    noop: number
+  }
+}): SyncPlanDto => ({
+  clientName: plan.clientName as SyncPlanDto['clientName'],
+  actions: plan.actions.map((action) => ({
+    type: mapPlanActionType(action.type),
+    toolName: action.toolName,
+    reasonCode: action.reasonCode,
+    reason: action.reason,
+    desiredEntry: action.desiredEntry
+      ? {
+          command: action.desiredEntry.command,
+          args: [...action.desiredEntry.args],
+          env: { ...(action.desiredEntry.env ?? {}) },
+        }
+      : undefined,
+    actualEntry: action.actualEntry
+      ? {
+          command: action.actualEntry.command,
+          args: [...action.actualEntry.args],
+          env: { ...(action.actualEntry.env ?? {}) },
+        }
+      : undefined,
+  })),
+  summary: {
+    create: plan.summary.create,
+    update: plan.summary.update,
+    delete: plan.summary.delete,
+    noop: plan.summary.noop,
+  },
+})
 
 const getWindow = (event: IpcMainInvokeEvent) => BrowserWindow.fromWebContents(event.sender) ?? undefined
 
@@ -87,6 +196,84 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
       return fail(toStatusError(error), error instanceof Error ? error.message : 'Unknown error')
     }
   })
+
+
+  ipcMain.handle(IPC_CHANNELS.workspace.attach, async (_event, toolName: string, clientName: string): Promise<WorkspaceAttachResponse> => {
+    try {
+      const plan = await services.workspaceSession.attach(toolName, clientName)
+      return ok(mapSyncPlan(plan))
+    } catch (error) {
+      return fail(toAttachDetachError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.detach, async (_event, toolName: string, clientName: string): Promise<WorkspaceDetachResponse> => {
+    try {
+      const plan = await services.workspaceSession.detach(toolName, clientName)
+      return ok(mapSyncPlan(plan))
+    } catch (error) {
+      return fail(toAttachDetachError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.plan, async (_event, clientName: string): Promise<WorkspacePlanResponse> => {
+    try {
+      const plan = await services.workspaceSession.plan(clientName)
+      return ok(mapSyncPlan(plan))
+    } catch (error) {
+      return fail(toPlanError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.sync, async (_event, clientName: string): Promise<WorkspaceSyncResponse> => {
+    try {
+      const plan = await services.workspaceSession.sync(clientName)
+      return ok(mapSyncPlan(plan))
+    } catch (error) {
+      return fail(toSyncError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.workspace.mcpAdd,
+    async (_event, toolName: string, options: WorkspaceMcpAddOptions): Promise<WorkspaceMcpMutationResponse> => {
+    try {
+      const status = await services.workspaceSession.addMcp(toolName, options)
+      return ok(status)
+    } catch (error) {
+      return fail(toMcpMutationError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.workspace.mcpUpdate,
+    async (
+      _event,
+      toolName: string,
+      nextToolName: string,
+      options: WorkspaceMcpAddOptions,
+    ): Promise<WorkspaceMcpUpdateResponse> => {
+      try {
+        const status = await services.workspaceSession.updateMcp(toolName, nextToolName, options)
+        return ok(status)
+      } catch (error) {
+        return fail(toMcpMutationError(error), error instanceof Error ? error.message : 'Unknown error')
+      }
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.workspace.mcpRemove,
+    async (_event, toolName: string): Promise<WorkspaceMcpMutationResponse> => {
+    try {
+      const status = await services.workspaceSession.removeMcp(toolName)
+      return ok(status)
+    } catch (error) {
+      return fail(toMcpMutationError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+    },
+  )
 
   ipcMain.handle(IPC_CHANNELS.workspace.copyPath, async (_event, path: string): Promise<WorkspaceCopyPathResponse> => {
     try {

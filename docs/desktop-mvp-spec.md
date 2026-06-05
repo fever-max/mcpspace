@@ -1,4 +1,4 @@
-﻿# Desktop MVP Spec
+# Desktop MVP Spec
 
 ## 1. Desktop App 전체 아키텍처
 
@@ -88,7 +88,8 @@ Desktop App은 workspace 상태에 따라 아래 3개 화면을 명확히 분리
 화면 목표:
 
 - AI-first is the MVP primary interaction model.
-- 사용자는 먼저 AI Client를 선택하고, 선택한 client에 연결된 MCP Tools를 확인한다.
+- 사용자는 먼저 workspace에 등록된 MCP Tools를 확인하고, 이어서 AI Client를 선택한다.
+- workspace-level MCP registry와 client-level assignment를 분리해서 보여준다.
 - 변경 예정 사항은 선택된 AI Client 기준으로 확인하고 적용한다.
 
 주요 UI:
@@ -96,6 +97,7 @@ Desktop App은 workspace 상태에 따라 아래 3개 화면을 명확히 분리
 - 상단: workspace name, status badge `In Sync` 또는 `Out of Sync`
 - Top action: `Sync Now`
 - `Project Path` 카드
+- `Workspace MCP Tools` 카드
 - `AI Clients` 카드
 - `MCP Tools for {selectedClient}` 카드
 - `Changes to Apply` 영역
@@ -103,8 +105,13 @@ Desktop App은 workspace 상태에 따라 아래 3개 화면을 명확히 분리
 
 Ready 화면 레이아웃:
 
-- 좌측 카드: `AI Clients`
-- 우측 카드: `MCP Tools for {selectedClient}`
+- 1단: `Workspace MCP Tools` 전체 폭 카드
+  - workspace에 등록된 MCP 목록을 표시한다.
+  - `Add Custom Tool`과 `Remove` 같은 workspace-level actions를 제공한다.
+  - 이 영역은 어떤 client에 붙일지와는 독립적으로 workspace의 MCP registry를 관리한다.
+- 2단:
+  - 좌측 카드: `AI Clients`
+  - 우측 카드: `MCP Tools for {selectedClient}`
 - 하단 전체 폭: `Changes to Apply`
 - 하단 우측: `Review Changes` / `Apply Changes`
 
@@ -121,10 +128,12 @@ Ready 화면 레이아웃:
 Ready interaction model:
 
 - `AI Client-first`가 MVP의 기본 상호작용 모델이다.
+- workspace-level `MCP Tools` registry가 1단 전체 폭으로 먼저 보이고, 그 다음 AI Client 선택으로 이어진다.
 - `selectedClient`가 있어야 오른쪽 카드와 `Changes to Apply`가 의미를 가진다.
-- `MCP Tools`는 독립적인 1차 선택 대상이 아니라, 선택된 AI Client에 종속된 하위 목록이다.
+- `MCP Tools for {selectedClient}`는 선택된 AI Client에 종속된 하위 목록이다.
 - `MCP-first` 표현은 MVP 문맥에서 사용하지 않는다.
 - `MCP Tools for {selectedClient}` 구조를 UI와 문서에서 일관되게 사용한다.
+- workspace-level MCP registry와 client-level assignment는 서로 다른 레이어로 분리한다.
 
 ## 3. main / preload / renderer 역할 분리
 
@@ -198,6 +207,11 @@ Ready interaction model:
 - 역할: workspace 이름, path, sync 상태, 액션 버튼을 표시한다.
 - props: `workspace`, `statusSummary`, `onRefresh`, `onOpenFolder`, `onSyncNow`
 - events: refresh, open folder, sync now
+
+### McpRegistryCard
+- 역할: workspace에 등록된 MCP Tools를 보여주고 추가/삭제한다.
+- props: `tools`, `onAddTool`, `onRemoveTool`, `onRefresh`
+- events: add tool, remove tool, refresh
 
 ### AiClientsCard
 - 역할: client별 연결 상태를 보여주고, 하나의 client를 선택하게 한다.

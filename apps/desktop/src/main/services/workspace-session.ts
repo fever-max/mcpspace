@@ -20,7 +20,7 @@ import {
   CodexAdapter,
   CursorAdapter,
 } from '@mcpspace/adapters'
-import { DefaultReconciler } from '@mcpspace/reconciler'
+import { DefaultReconciler, type SyncPlan } from '@mcpspace/reconciler'
 import {
   DefaultMcpRegistryService,
   DefaultWorkspaceService,
@@ -89,7 +89,10 @@ class DesktopPathResolver implements PathResolver {
 }
 
 class DesktopAdapterFactory implements AdapterFactory {
-  constructor(private readonly pathResolver: PathResolver) {}
+  constructor(
+    private readonly pathResolver: PathResolver,
+    private readonly workspacePath: string,
+  ) {}
 
   get(client: string): ClientAdapter {
     const name = client as AdapterName
@@ -99,15 +102,15 @@ class DesktopAdapterFactory implements AdapterFactory {
     }
 
     if (name === 'claude-code') {
-      return new ClaudeCodeAdapter(this.pathResolver)
+      return new ClaudeCodeAdapter(this.pathResolver, this.workspacePath)
     }
 
     if (name === 'codex') {
-      return new CodexAdapter(this.pathResolver)
+      return new CodexAdapter(this.pathResolver, this.workspacePath)
     }
 
     if (name === 'cursor') {
-      return new CursorAdapter(this.pathResolver)
+      return new CursorAdapter(this.pathResolver, this.workspacePath)
     }
 
     throw new Error(
@@ -122,7 +125,7 @@ const createWorkspaceRuntime = (workspacePath: string): WorkspaceRuntime => {
   const configLoader: ConfigLoader = new FileConfigLoader(pathResolver)
   const stateRepository: StateRepository = new FileStateRepository(pathResolver, atomicWriter)
   const desiredStateRepository = new FileDesiredStateRepository(configLoader, atomicWriter)
-  const adapterFactory = new DesktopAdapterFactory(pathResolver)
+  const adapterFactory = new DesktopAdapterFactory(pathResolver, workspacePath)
   const reconciler = new DefaultReconciler()
 
   return {
@@ -230,6 +233,48 @@ export class WorkspaceSession {
     return readyWorkspace
   }
 
+  async attach(toolName: string, clientName: string): Promise<SyncPlan> {
+    this.ensureReadyWorkspace()
+    return this.ensureRuntime().workspaceService.attach(toolName, clientName)
+  }
+
+  async detach(toolName: string, clientName: string): Promise<SyncPlan> {
+    this.ensureReadyWorkspace()
+    return this.ensureRuntime().workspaceService.detach(toolName, clientName)
+  }
+
+  async plan(clientName: string): Promise<SyncPlan> {
+    this.ensureReadyWorkspace()
+    return this.ensureRuntime().workspaceService.plan(clientName)
+  }
+
+  async sync(clientName: string): Promise<SyncPlan> {
+    this.ensureReadyWorkspace()
+    return this.ensureRuntime().workspaceService.sync(clientName)
+  }
+
+  async addMcp(toolName: string, options?: { command?: string; args?: string[]; env?: Record<string, string>; package?: string }): Promise<WorkspaceStatusDto> {
+    this.ensureReadyWorkspace()
+    await this.ensureRuntime().mcpRegistryService.add(toolName, options)
+    return this.status()
+  }
+
+  async updateMcp(
+    toolName: string,
+    nextToolName: string,
+    options?: { command?: string; args?: string[]; env?: Record<string, string>; package?: string },
+  ): Promise<WorkspaceStatusDto> {
+    this.ensureReadyWorkspace()
+    await this.ensureRuntime().mcpRegistryService.update(toolName, nextToolName, options)
+    return this.status()
+  }
+
+  async removeMcp(toolName: string): Promise<WorkspaceStatusDto> {
+    this.ensureReadyWorkspace()
+    await this.ensureRuntime().mcpRegistryService.remove(toolName)
+    return this.status()
+  }
+
   async status(): Promise<WorkspaceStatusDto> {
     if (!this.currentWorkspace) {
       return {
@@ -263,6 +308,18 @@ export class WorkspaceSession {
       outOfSyncCount,
       inSyncCount: clients.length - outOfSyncCount,
     }
+  }
+
+  private ensureReadyWorkspace(): WorkspaceContextDto {
+    if (!this.currentWorkspace) {
+      throw new Error('No workspace selected.')
+    }
+
+    if (this.currentWorkspace.status !== 'ready') {
+      throw new Error('Workspace is not initialized.')
+    }
+
+    return this.currentWorkspace
   }
 
   private ensureRuntime(): WorkspaceRuntime {

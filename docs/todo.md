@@ -45,6 +45,12 @@
 - [x] `workspace:init`으로 `.mcpspace/config.yaml` 생성
 - [x] preload `window.mcpspace` API 노출
 - [x] DTO 타입 정의 (`WorkspaceContextDto`, `WorkspaceStatusDto`, `ClientStatusDto` 등)
+- [x] `workspace:attach` / `workspace:detach` 구현
+- [x] `workspace:plan` 구현
+- [x] `workspace:sync` 구현
+- [x] `workspace:copy-path` / `workspace:open-in-explorer` 구현
+- [x] `workspace:mcp-add` / `workspace:mcp-remove` 구현
+- [x] `workspace:mcp-update` 구현
 
 ### Desktop UI
 
@@ -53,6 +59,7 @@
 - [x] EmptyWorkspaceView
 - [x] NotInitializedWorkspaceView + Initialize Workspace 확인 모달
 - [x] ReadyWorkspaceView (AI Client-first 레이아웃)
+- [x] Workspace MCP Tools 전체 폭 카드
 - [x] AI Client 선택 상태
 - [x] 선택된 client 기준 MCP Tools 표시
 - [x] Changes to Apply (draft 기반)
@@ -60,6 +67,9 @@
 - [x] raw enum 제거, 사용자 라벨 적용
 - [x] 라이트 / 다크 테마 토글
 - [x] Project Path strip Copy / Open in Explorer 동작 연결
+- [x] Add Custom Tool 모달
+- [x] Edit MCP Tool 모달
+- [x] Remove MCP Tool 동작
 - [x] 빌드 성공
 
 ---
@@ -68,21 +78,21 @@
 
 ### IPC 채널 추가
 
-- [ ] `workspace:attach` / `workspace:detach` 채널 구현
+- [x] `workspace:attach` / `workspace:detach` 채널 구현
   - `channels.ts` → `workspace.attach`, `workspace.detach` 추가
   - `types.ts` → request: `{ toolName, client }`, error codes: `WORKSPACE_NOT_OPEN` / `TOOL_NOT_FOUND` / `UNKNOWN_ERROR`
   - `workspace.ipc.ts` → `WorkspaceSession.attach()` / `detach()` 호출
   - `workspace-session.ts` → `WorkspaceService.attach()` / `detach()` 연결
   - `preload/index.ts` → 노출
 
-- [ ] `workspace:plan` 채널 구현
+- [x] `workspace:plan` 채널 구현
   - `channels.ts` → `workspace.plan` 추가
   - `types.ts` → request: `{ client }`, response: `SyncPlanDto`, error codes: `WORKSPACE_NOT_OPEN` / `PLAN_FAILED` / `UNKNOWN_ERROR`
   - `workspace.ipc.ts` → `WorkspaceSession.plan(client)` 호출
   - `workspace-session.ts` → `WorkspaceService.plan()` 연결
   - `preload/index.ts` → 노출
 
-- [ ] `workspace:sync` 채널 구현
+- [x] `workspace:sync` 채널 구현
   - `channels.ts` → `workspace.sync` 추가
   - `types.ts` → request: `{ client }`, error codes: `WORKSPACE_NOT_OPEN` / `SYNC_FAILED` / `RESTORE_FAILED` / `UNKNOWN_ERROR`
   - `workspace.ipc.ts` → `WorkspaceSession.sync(client)` 호출
@@ -91,22 +101,22 @@
 
 ### Ready State 연결
 
-- [ ] Sync Now → `workspace:status` 재조회
-  - `render()`의 Sync Now 버튼 `disabled` 제거 (workspace.status === 'ready'일 때)
-  - `data-action="sync-now"` 추가
-  - `bindActionHandlers()`에서 `window.mcpspace.workspace.status()` 호출 후 `applyReadyWorkspace()` 실행
+- [x] Refresh → `workspace:status` 재조회
+  - `render()`의 상단 Refresh 버튼 연결
+  - `data-action="refresh-workspace"` 추가
+  - `bindActionHandlers()`에서 `window.mcpspace.workspace.status()` 호출 후 화면 갱신
 
-- [ ] selectedClient 체크박스 변경 → 실제 `attach` / `detach` IPC 호출
+- [x] selectedClient 체크박스 변경 → 실제 `attach` / `detach` IPC 호출
   - 선행 조건: `workspace:attach` / `workspace:detach` 채널 구현 필요
   - `toggle-tool` 핸들러에서 draft 변경 후 즉시 IPC 호출로 교체
   - 실패 시 draft 롤백 처리
 
-- [ ] Changes to Apply → 실제 `workspace:plan` 결과로 교체
+- [x] Changes to Apply → 실제 `workspace:plan` 결과로 교체
   - 선행 조건: `workspace:plan` 채널 구현 필요
   - selectedClient 변경 시마다 `workspace:plan` 호출하여 `SyncPlanDto` 수신
   - 현재 draft 기반 `buildChangeRows()` 를 plan 결과로 교체
 
-- [ ] Apply Changes → 실제 `workspace:sync` 호출
+- [x] Apply Changes → 실제 `workspace:sync` 호출
   - 선행 조건: `workspace:sync` 채널 구현 필요
   - Apply Changes 버튼 활성화 (변경사항 있을 때만)
   - 호출 후 `workspace:status` 재조회
