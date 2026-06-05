@@ -1,6 +1,6 @@
 # mcpspace
 
-![mcpspace](assets/img/info.png)
+![mcpspace](https://raw.githubusercontent.com/fever-max/mcpspace/main/assets/img/info.png)
 
 A CLI and Desktop app for managing MCP tools across AI clients (Claude, Cursor, Codex) with a single configuration.
 
