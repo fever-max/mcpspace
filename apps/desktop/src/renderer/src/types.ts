@@ -12,6 +12,7 @@ declare global {
     mcpspace: {
       workspace: {
         open(): Promise<IpcResult<WorkspaceContextDto | null>>
+        openPath(path: string): Promise<IpcResult<WorkspaceContextDto | null>>
         init(): Promise<IpcResult<WorkspaceContextDto>>
         current(): Promise<IpcResult<WorkspaceContextDto | null>>
         status(): Promise<IpcResult<WorkspaceStatusDto>>

@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   workspace: {
     open: 'workspace:open',
+    openPath: 'workspace:open-path',
     init: 'workspace:init',
     current: 'workspace:current',
     status: 'workspace:status',

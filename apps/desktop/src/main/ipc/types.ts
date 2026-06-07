@@ -57,6 +57,7 @@ export type WorkspaceOpenInExplorerErrorCode =
   | 'UNKNOWN_ERROR'
 
 export type WorkspaceOpenResponse = IpcResult<WorkspaceContextDto | null, WorkspaceOpenErrorCode>
+export type WorkspaceOpenPathResponse = WorkspaceOpenResponse
 export type WorkspaceInitResponse = IpcResult<WorkspaceContextDto, WorkspaceInitErrorCode>
 export type WorkspaceCurrentResponse = IpcResult<WorkspaceContextDto | null, WorkspaceCurrentErrorCode>
 export type WorkspaceStatusResponse = IpcResult<WorkspaceStatusDto, WorkspaceStatusErrorCode>

@@ -19,6 +19,7 @@ body,
 
 body {
   background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+  overflow: hidden;
 }
 
 button,
@@ -34,7 +35,9 @@ button:disabled {
 .shell {
   display: grid;
   grid-template-columns: 232px 1fr;
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -44,6 +47,7 @@ button:disabled {
   padding: 20px 16px 16px;
   border-right: 1px solid #e5e7eb;
   background: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
 }
 
 .brand {
@@ -84,7 +88,7 @@ button:disabled {
 
 .sidebar-workspaces {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   padding-top: 8px;
   border-top: 1px solid #e5e7eb;
 }
@@ -112,34 +116,33 @@ button:disabled {
   align-items: center;
   gap: 8px;
   width: 100%;
-  border: 1px solid #dbe4ff;
+  border: 0;
   border-radius: 12px;
-  padding: 12px;
-  background: #f8fbff;
+  padding: 10px 12px;
+  background: transparent;
   text-align: left;
 }
 
 .sidebar-workspace-item.active {
-  background: linear-gradient(180deg, #eff5ff 0%, #e9f2ff 100%);
+  background: #e8f0ff;
 }
 
 .sidebar-workspace-item:hover {
-  background: #f6f9ff;
+  background: #f4f7fb;
 }
 
 .sidebar-workspace-item:active {
-  background: #eaf1ff;
+  background: #e9edf4;
 }
 
 .sidebar-workspace-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: #dfeaff;
   color: #1d4ed8;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   flex: 0 0 auto;
 }
@@ -1128,6 +1131,8 @@ body[data-theme="dark"] .badge.danger {
 body[data-theme="dark"] .sidebar-workspace-item.active,
 body[data-theme="dark"] .nav-item.active {
   background: rgba(29, 78, 216, 0.25);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
 }
 
 body[data-theme="dark"] .theme-toggle-track {

@@ -1,4 +1,5 @@
 import { BrowserWindow, clipboard, dialog, shell, type IpcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
+import { stat } from 'node:fs/promises'
 
 import { IPC_CHANNELS } from './channels.js'
 import type {
@@ -18,6 +19,7 @@ import type {
   WorkspaceSyncErrorCode,
   WorkspaceSyncResponse,
   WorkspaceOpenErrorCode,
+  WorkspaceOpenPathResponse,
   WorkspaceOpenInExplorerResponse,
   WorkspaceOpenResponse,
   WorkspaceStatusErrorCode,
@@ -154,6 +156,15 @@ const mapSyncPlan = (plan: {
 
 const getWindow = (event: IpcMainInvokeEvent) => BrowserWindow.fromWebContents(event.sender) ?? undefined
 
+const isDirectoryPath = async (path: string): Promise<boolean> => {
+  try {
+    const stats = await stat(path)
+    return stats.isDirectory()
+  } catch {
+    return false
+  }
+}
+
 export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain): void => {
   ipcMain.handle(IPC_CHANNELS.workspace.open, async (event): Promise<WorkspaceOpenResponse> => {
     try {
@@ -169,6 +180,19 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
       }
 
       const workspace = await services.workspaceSession.open(result.filePaths[0])
+      return ok(workspace)
+    } catch (error) {
+      return fail(toOpenError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.openPath, async (_event, workspacePath: string): Promise<WorkspaceOpenPathResponse> => {
+    try {
+      if (!workspacePath || !(await isDirectoryPath(workspacePath))) {
+        return fail('WORKSPACE_NOT_FOUND', `Workspace path not found: ${workspacePath}`)
+      }
+
+      const workspace = await services.workspaceSession.open(workspacePath)
       return ok(workspace)
     } catch (error) {
       return fail(toOpenError(error), error instanceof Error ? error.message : 'Unknown error')

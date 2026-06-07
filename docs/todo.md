@@ -123,7 +123,7 @@
 
 ### Sidebar
 
-- [ ] 최근 workspace 목록 유지 (localStorage, 최대 5개)
+- [x] 최근 workspace 목록 유지 (localStorage, 최대 5개)
   - workspace 변경 시 localStorage 갱신
   - Sidebar에서 목록 렌더링, 클릭 시 해당 경로로 바로 열기 (`workspace:openPath` 채널 추가 필요)
   - 현재 workspace 항목 active 표시

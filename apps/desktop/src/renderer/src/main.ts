@@ -61,11 +61,59 @@ const state: ViewState = {
 
 let planRequestId = 0
 
+type RecentWorkspace = {
+  path: string
+  name: string
+}
+
+const RECENT_WORKSPACES_STORAGE_KEY = 'mcpspace.recent-workspaces'
+
 const disabledAttr = (value: boolean): string => (value ? 'disabled aria-disabled="true"' : '')
+
+const readRecentWorkspaces = (): RecentWorkspace[] => {
+  try {
+    const raw = localStorage.getItem(RECENT_WORKSPACES_STORAGE_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed.filter(
+      (item): item is RecentWorkspace =>
+        Boolean(item)
+        && typeof item === 'object'
+        && typeof (item as RecentWorkspace).path === 'string'
+        && typeof (item as RecentWorkspace).name === 'string',
+    )
+  } catch {
+    return []
+  }
+}
+
+const writeRecentWorkspaces = (workspaces: RecentWorkspace[]): void => {
+  localStorage.setItem(RECENT_WORKSPACES_STORAGE_KEY, JSON.stringify(workspaces))
+}
+
+const rememberWorkspace = (workspace: WorkspaceContextDto | null): void => {
+  if (!workspace) {
+    return
+  }
+
+  const next = [
+    { path: workspace.path, name: workspace.name },
+    ...readRecentWorkspaces().filter((item) => item.path !== workspace.path),
+  ].slice(0, 5)
+
+  writeRecentWorkspaces(next)
+}
 
 const icon = {
   folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.75A2.25 2.25 0 0 1 5.25 4.5h4.39c.6 0 1.17.24 1.59.66l1.15 1.14c.42.42.99.66 1.59.66h5.83A2.25 2.25 0 0 1 22 9.21v7.54A2.25 2.25 0 0 1 19.75 19H5.25A2.25 2.25 0 0 1 3 16.75V6.75Z" fill="currentColor"/></svg>',
-  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8.25A2.25 2.25 0 0 1 10.25 6h7.5A2.25 2.25 0 0 1 20 8.25v7.5A2.25 2.25 0 0 1 17.75 18h-7.5A2.25 2.25 0 0 1 8 15.75v-7.5Zm-3 3A2.25 2.25 0 0 1 7.25 9H8v2h-.75a.25.25 0 0 0-.25.25v7.5c0 .14.11.25.25.25h7.5c.14 0 .25-.11.25-.25V18h2v.75A2.25 2.25 0 0 1 15.75 21h-7.5A2.25 2.25 0 0 1 6 18.75v-7.5Z" fill="currentColor"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 15H6A2 2 0 0 1 4 13V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   sparkles: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 2.5 11 7l4.5 1.5L11 10l-1.5 4.5L8 10 3.5 8.5 8 7l1.5-4.5ZM17.5 12.5 18.5 15l2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5ZM16 3.5 16.7 5l1.5.7-1.5.7-.7 1.5-.7-1.5-1.5-.7 1.5-.7.7-1.5Z" fill="currentColor"/></svg>',
   open: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3ZM5 5h6v2H7v10h10v-4h2v6H5V5Z" fill="currentColor"/></svg>',
   search: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 0 4.09 11.54l4.94 4.94 1.41-1.41-4.94-4.94A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" fill="currentColor"/></svg>',
@@ -635,7 +683,14 @@ const renderAssignedClientsModal = (): string => {
 }
 
 const renderSidebarWorkspace = (): string => {
-  if (!state.workspace) {
+  const recentWorkspaces = readRecentWorkspaces()
+  const currentWorkspace = state.workspace ? { path: state.workspace.path, name: state.workspace.name } : null
+  const workspaceItems = [
+    ...(currentWorkspace ? [currentWorkspace] : []),
+    ...recentWorkspaces.filter((item) => item.path !== currentWorkspace?.path),
+  ]
+
+  if (workspaceItems.length === 0) {
     return `
       <section class="sidebar-workspaces empty">
         <div class="sidebar-workspaces-heading">Your Workspaces</div>
@@ -648,13 +703,24 @@ const renderSidebarWorkspace = (): string => {
   return `
     <section class="sidebar-workspaces">
       <div class="sidebar-workspaces-heading">Your Workspaces</div>
-      <button class="sidebar-workspace-item active" type="button" data-action="open-workspace">
-        <span class="sidebar-workspace-icon">${icon.folder}</span>
-        <span class="sidebar-workspace-meta">
-          <span class="sidebar-workspace-name">${state.workspace.name}</span>
-          <span class="sidebar-workspace-path">${state.workspace.path}</span>
-        </span>
-      </button>
+      ${workspaceItems
+        .map(
+          (workspace) => `
+            <button
+              class="sidebar-workspace-item${state.workspace?.path === workspace.path ? ' active' : ''}"
+              type="button"
+              data-action="open-workspace-path"
+              data-path="${workspace.path}"
+            >
+              <span class="sidebar-workspace-icon">${icon.folder}</span>
+              <span class="sidebar-workspace-meta">
+                <span class="sidebar-workspace-name">${workspace.name}</span>
+                <span class="sidebar-workspace-path">${workspace.path}</span>
+              </span>
+            </button>
+          `,
+        )
+        .join('')}
     </section>
   `
 }
@@ -988,6 +1054,17 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace-path"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const workspacePath = button.dataset.path
+      if (!workspacePath) {
+        return
+      }
+
+      await openWorkspacePath(workspacePath)
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="copy-project-path"]').forEach((button) => {
     button.addEventListener('click', async () => {
       await copyCurrentProjectPath()
@@ -1280,6 +1357,7 @@ const loadWorkspace = async (): Promise<void> => {
   }
 
   state.workspace = currentResult.data
+  rememberWorkspace(currentResult.data)
 
   if (currentResult.data?.status === 'ready') {
     const statusResult = await window.mcpspace.workspace.status()
@@ -1319,6 +1397,51 @@ const openWorkspace = async (): Promise<void> => {
   }
 
   state.workspace = result.data
+  rememberWorkspace(state.workspace)
+
+  if (state.workspace?.status === 'ready') {
+    const statusResult = await window.mcpspace.workspace.status()
+    if (statusResult.ok) {
+      applyReadyWorkspace(statusResult.data)
+      await refreshSelectedClientPlan()
+    } else {
+      state.error = statusResult.error.message
+      clearReadyWorkspace()
+    }
+  } else {
+    clearReadyWorkspace()
+  }
+
+  state.loading = false
+  render()
+}
+
+const openWorkspacePath = async (workspacePath: string): Promise<void> => {
+  if (!workspacePath) {
+    return
+  }
+
+  state.loading = true
+  state.error = null
+  state.initConfirmOpen = false
+  render()
+
+  const result = await window.mcpspace.workspace.openPath(workspacePath)
+  if (!result.ok) {
+    state.error = result.error.message
+    state.loading = false
+    render()
+    return
+  }
+
+  if (result.data === null) {
+    state.loading = false
+    await loadWorkspace()
+    return
+  }
+
+  state.workspace = result.data
+  rememberWorkspace(state.workspace)
 
   if (state.workspace?.status === 'ready') {
     const statusResult = await window.mcpspace.workspace.status()
@@ -1352,6 +1475,7 @@ const initializeWorkspace = async (): Promise<void> => {
   }
 
   state.workspace = result.data
+  rememberWorkspace(state.workspace)
   const statusResult = await window.mcpspace.workspace.status()
   if (statusResult.ok) {
     applyReadyWorkspace(statusResult.data)

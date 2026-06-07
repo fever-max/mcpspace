@@ -4,8 +4,9 @@ import { IPC_CHANNELS } from '../main/ipc/channels.js'
 
 const api = {
   workspace: {
-    open: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.open),
-    init: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.init),
+      open: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.open),
+      openPath: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.workspace.openPath, path),
+      init: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.init),
     current: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.current),
     status: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.status),
     attach: (toolName: string, clientName: string) => ipcRenderer.invoke(IPC_CHANNELS.workspace.attach, toolName, clientName),
