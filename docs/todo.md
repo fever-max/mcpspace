@@ -128,11 +128,6 @@
   - Sidebar에서 목록 렌더링, 클릭 시 해당 경로로 바로 열기 (`workspace:openPath` 채널 추가 필요)
   - 현재 workspace 항목 active 표시
 
-### polish
-
-- [ ] empty / not_initialized / ready 화면 최종 시각적 정리
-- [ ] 에러 상태 UX 정리 (IPC 실패 시 사용자 메시지)
-
 ---
 
 ## P2 — CLI 완성도 + 안정화
@@ -158,6 +153,12 @@
   - Windows: `target: "nsis"` → 설치형 exe
   - macOS: `target: "dmg"`
   - 루트 `package.json`에 `desktop:package` 스크립트 추가
+  - `apps/desktop/dist/` `.gitignore`에 추가
+
+### polish
+
+- [ ] empty / not_initialized / ready 화면 최종 시각적 정리 (앱 실제 실행 후 개선점 목록화)
+- [ ] 에러 상태 UX 정리 (IPC 실패 시 컨텍스트 있는 메시지 — "sync 실패", "attach 실패" 등)
 
 ### Catalog
 
