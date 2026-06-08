@@ -11,7 +11,8 @@
                     "typecheck":  "tsc -b --pretty false",
                     "desktop:dev":  "node scripts/run-desktop-dev.cjs",
                     "desktop:build":  "npm --workspace @mcpspace/desktop run build",
-                    "desktop:typecheck":  "npm --workspace @mcpspace/desktop run typecheck"
+                    "desktop:typecheck":  "npm --workspace @mcpspace/desktop run typecheck",
+                    "desktop:package":  "npm --workspace @mcpspace/desktop run package"
                 },
     "bin":  {
                 "mcpspace":  "apps/cli/dist/index.js"

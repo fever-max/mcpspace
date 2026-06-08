@@ -51,10 +51,22 @@ button:disabled {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 16px;
   font-weight: 800;
+  line-height: 1;
   letter-spacing: -0.02em;
   margin-bottom: 2px;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: block;
+  object-fit: contain;
 }
 
 .nav {

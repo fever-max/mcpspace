@@ -1,4 +1,5 @@
 import './styles/app.css'
+import brandLogoUrl from './assets/logo.png?url'
 
 import type { ClientId, ClientStatusDto, SyncPlanDto, WorkspaceContextDto, WorkspaceStatusDto } from '../../shared/dtos.js'
 
@@ -1273,7 +1274,7 @@ const render = (): void => {
   root.innerHTML = `
     <div class="shell">
       <aside class="sidebar">
-        <div class="brand">mcpspace</div>
+        <div class="brand"><img class="brand-logo" src="${brandLogoUrl}" alt="" aria-hidden="true" /><span>mcpspace</span></div>
         <nav class="nav">
           <button class="nav-item active" type="button"><span class="nav-icon">${icon.folder}</span><span>Workspaces</span></button>
           <button class="nav-item" type="button"><span class="nav-icon">${icon.search}</span><span>Marketplace</span></button>
