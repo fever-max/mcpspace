@@ -1,8 +1,15 @@
 import './styles/app.css'
 import brandLogoUrl from './assets/logo.png?url'
-import { initLanguage, setLanguage, t, type Lang } from './i18n.js'
+import { getLanguage, initLanguage, setLanguage, t, type Lang } from './i18n.js'
 
-import type { ClientId, ClientStatusDto, SyncPlanDto, WorkspaceContextDto, WorkspaceStatusDto } from '../../shared/dtos.js'
+import type {
+  ClientId,
+  ClientStatusDto,
+  McpCatalogEntryDto,
+  SyncPlanDto,
+  WorkspaceContextDto,
+  WorkspaceStatusDto,
+} from '../../shared/dtos.js'
 
 type ViewState = {
   activeSection: 'workspaces' | 'marketplace' | 'doctor' | 'settings'
@@ -15,10 +22,15 @@ type ViewState = {
   toolModalMode: 'add' | 'edit' | null
   toolModalOriginalName: string | null
   addToolModalOpen: boolean
+  addToolModalTab: 'catalog' | 'manual'
   addToolName: string
   addToolCommand: string
   addToolArgs: string
   addToolPackage: string
+  catalogTools: McpCatalogEntryDto[]
+  catalogLoading: boolean
+  catalogSearch: string
+  catalogSelectedToolNames: string[]
   removeToolModalOpen: boolean
   removeToolName: string | null
   assignedClientsModalOpen: boolean
@@ -128,10 +140,15 @@ const state: ViewState = {
   toolModalMode: null,
   toolModalOriginalName: null,
   addToolModalOpen: false,
+  addToolModalTab: 'catalog',
   addToolName: '',
   addToolCommand: 'npx',
   addToolArgs: '-y\n@modelcontextprotocol/server-filesystem\n.',
   addToolPackage: '',
+  catalogTools: [],
+  catalogLoading: false,
+  catalogSearch: '',
+  catalogSelectedToolNames: [],
   removeToolModalOpen: false,
   removeToolName: null,
   assignedClientsModalOpen: false,
@@ -176,6 +193,7 @@ type RecentWorkspace = {
 }
 
 const RECENT_WORKSPACES_STORAGE_KEY = 'mcpspace.recent-workspaces'
+const LAST_WORKSPACE_STORAGE_KEY = 'mcpspace.last-workspace'
 
 const disabledAttr = (value: boolean): string => (value ? 'disabled aria-disabled="true"' : '')
 
@@ -207,17 +225,36 @@ const writeRecentWorkspaces = (workspaces: RecentWorkspace[]): void => {
   localStorage.setItem(RECENT_WORKSPACES_STORAGE_KEY, JSON.stringify(workspaces))
 }
 
+const readLastWorkspacePath = (): string | null => {
+  try {
+    const raw = localStorage.getItem(LAST_WORKSPACE_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw) as unknown
+    return typeof parsed === 'string' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const writeLastWorkspacePath = (path: string): void => {
+  localStorage.setItem(LAST_WORKSPACE_STORAGE_KEY, JSON.stringify(path))
+}
+
 const rememberWorkspace = (workspace: WorkspaceContextDto | null): void => {
   if (!workspace) {
     return
   }
 
-  const next = [
-    { path: workspace.path, name: workspace.name },
-    ...readRecentWorkspaces().filter((item) => item.path !== workspace.path),
-  ].slice(0, 5)
+  const recentWorkspaces = readRecentWorkspaces()
+  const next = recentWorkspaces.some((item) => item.path === workspace.path)
+    ? recentWorkspaces.map((item) => (item.path === workspace.path ? { path: workspace.path, name: workspace.name } : item))
+    : [...recentWorkspaces, { path: workspace.path, name: workspace.name }].slice(-5)
 
   writeRecentWorkspaces(next)
+  writeLastWorkspacePath(workspace.path)
 }
 
 const icon = {
@@ -304,6 +341,31 @@ const getClientDisplayName = (client: ClientId): string => clientDisplayNames[cl
 const getClientAvatarLabel = (client: ClientId): string => clientAvatarLabels[client] ?? client.slice(0, 2).toUpperCase()
 const getToolDisplayName = (toolName: string): string => toolDisplayNames[toolName] ?? toolName
 const getToolAvatarLabel = (toolName: string): string => toolAvatarLabels[toolName] ?? toolName.slice(0, 2).toUpperCase()
+const formatInitializeWorkspaceInfoBody = (): string => {
+  const text = t('common.initializeWorkspaceInfoBody')
+  return text
+    .replace('.mcpspace', '<code>.mcpspace</code>')
+    .replace('config.yaml', '<code>config.yaml</code>')
+}
+const formatUsedByLabel = (count: number): string => {
+  if (getLanguage() === 'ko') {
+    return `AI ${count}개 사용 중`
+  }
+
+  return `Used by ${count} AI${count === 1 ? '' : 's'}`
+}
+
+const formatAssignedClientsTitle = (clients: string[]): string => {
+  if (clients.length === 0) {
+    return t('common.noAisUsingTool')
+  }
+
+  if (getLanguage() === 'ko') {
+    return `이 도구는 ${clients.join(', ')}가 사용 중입니다.`
+  }
+
+  return `Used by ${clients.join(', ')}`
+}
 
 const getPreferredClientSelection = (clients: ClientStatusDto[]): ClientId | null => {
   for (const clientId of clientOrder) {
@@ -593,26 +655,87 @@ const openCurrentProjectInExplorer = async (): Promise<void> => {
   }
 }
 
+const refreshCatalogTools = async (): Promise<void> => {
+  if (!state.addToolModalOpen || state.toolModalMode !== 'add') {
+    return
+  }
+
+  state.catalogLoading = true
+  render()
+
+  const result = await window.mcpspace.workspace.catalogList()
+  if (!result.ok) {
+    if (!state.addToolModalOpen || state.toolModalMode !== 'add') {
+      return
+    }
+
+    state.error = result.error.message
+    state.catalogLoading = false
+    render()
+    return
+  }
+
+  if (!state.addToolModalOpen || state.toolModalMode !== 'add') {
+    return
+  }
+
+  state.catalogTools = result.data.items
+  state.catalogLoading = false
+  render()
+}
+
+const toggleCatalogTool = (tool: McpCatalogEntryDto): void => {
+  if (tool.isRegistered || state.loading) {
+    return
+  }
+
+  const exists = state.catalogSelectedToolNames.includes(tool.toolName)
+  state.catalogSelectedToolNames = exists
+    ? state.catalogSelectedToolNames.filter((name) => name !== tool.toolName)
+    : [...state.catalogSelectedToolNames, tool.toolName]
+
+  if (!exists) {
+    state.addToolName = tool.toolName
+    state.addToolCommand = tool.command
+    state.addToolArgs = tool.args.join('\n')
+    state.addToolPackage = tool.package
+  }
+
+  state.error = null
+  render()
+}
+
+const getSelectedCatalogTools = (): McpCatalogEntryDto[] =>
+  state.catalogTools.filter((tool) => state.catalogSelectedToolNames.includes(tool.toolName))
+
 const openAddToolModal = (): void => {
   state.toolModalMode = 'add'
   state.toolModalOriginalName = null
   state.addToolModalOpen = true
+  state.addToolModalTab = 'catalog'
   state.addToolName = ''
   state.addToolCommand = 'npx'
   state.addToolArgs = ''
   state.addToolPackage = ''
+  state.catalogTools = []
+  state.catalogLoading = true
+  state.catalogSearch = ''
+  state.catalogSelectedToolNames = []
   state.error = null
   render()
+  void refreshCatalogTools()
 }
 
 const openEditToolModal = (tool: WorkspaceStatusDto['tools'][number]): void => {
   state.toolModalMode = 'edit'
   state.toolModalOriginalName = tool.toolName
   state.addToolModalOpen = true
+  state.addToolModalTab = 'manual'
   state.addToolName = tool.toolName
   state.addToolCommand = tool.command
   state.addToolArgs = tool.args.join('\n')
   state.addToolPackage = tool.package ?? ''
+  state.catalogSelectedToolNames = []
   state.error = null
   render()
 }
@@ -621,6 +744,11 @@ const closeAddToolModal = (): void => {
   state.addToolModalOpen = false
   state.toolModalMode = null
   state.toolModalOriginalName = null
+  state.addToolModalTab = 'catalog'
+  state.catalogTools = []
+  state.catalogLoading = false
+  state.catalogSearch = ''
+  state.catalogSelectedToolNames = []
   render()
 }
 
@@ -698,6 +826,149 @@ const closeAssignedClientsModal = (): void => {
   render()
 }
 
+const getFilteredCatalogTools = (): McpCatalogEntryDto[] => {
+  const query = state.catalogSearch.trim().toLowerCase()
+  const items = state.catalogTools.length > 0 ? state.catalogTools : []
+
+  if (!query) {
+    return items
+  }
+
+  return items.filter((tool) => {
+    const haystack = [tool.toolName, tool.package, tool.description].join(' ').toLowerCase()
+    return haystack.includes(query)
+  })
+}
+
+const renderMcpManualForm = (primaryLabel: string, title: string, description: string, showTabs = false): string => `
+  <div class="modal-backdrop" role="presentation">
+    <section class="modal modal-wide modal-add-mcp" role="dialog" aria-modal="true" aria-labelledby="add-tool-modal-title">
+      <button class="modal-close" data-action="cancel-add-tool" type="button" aria-label="${t('common.close')}">×</button>
+      <div class="modal-body modal-body-left">
+        <h3 id="add-tool-modal-title">${title}</h3>
+        <p>${description}</p>
+      </div>
+      ${
+        showTabs
+          ? `<div class="modal-tabs settings-segment settings-segment-theme modal-tabs-wide" role="tablist" aria-label="${t('common.addMcpMode')}">
+              <button data-action="switch-add-tool-tab" data-tab="catalog" class="settings-segment-button${state.addToolModalTab === 'catalog' ? ' active' : ''}" type="button">${t('common.fromCatalog')}</button>
+              <button data-action="switch-add-tool-tab" data-tab="manual" class="settings-segment-button${state.addToolModalTab === 'manual' ? ' active' : ''}" type="button">${t('common.manualInput')}</button>
+            </div>`
+          : ''
+      }
+      <div class="modal-form">
+        <label class="modal-field">
+          <span class="modal-field-label">${t('common.toolName')}</span>
+          <input data-action="add-tool-name" class="modal-input" type="text" value="${state.addToolName}" placeholder="my-mcp" ${disabledAttr(state.loading)} />
+        </label>
+        <label class="modal-field">
+          <span class="modal-field-label">${t('common.command')}</span>
+          <input data-action="add-tool-command" class="modal-input" type="text" value="${state.addToolCommand}" placeholder="npx" ${disabledAttr(state.loading)} />
+        </label>
+        <label class="modal-field">
+          <span class="modal-field-label">${t('common.args')}</span>
+          <textarea data-action="add-tool-args" class="modal-textarea" rows="4" placeholder="-y&#10;@modelcontextprotocol/server-filesystem&#10;." ${disabledAttr(state.loading)}>${state.addToolArgs}</textarea>
+        </label>
+        <label class="modal-field">
+          <span class="modal-field-label">${t('common.package')}</span>
+          <input data-action="add-tool-package" class="modal-input" type="text" value="${state.addToolPackage}" placeholder="@modelcontextprotocol/server-filesystem" ${disabledAttr(state.loading)} />
+        </label>
+      </div>
+      <div class="modal-actions modal-actions-right">
+        <button data-action="cancel-add-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
+        <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${primaryLabel}</span></button>
+      </div>
+    </section>
+  </div>
+`
+
+const renderCatalogMcpModal = (): string => {
+  const filteredTools = getFilteredCatalogTools()
+  const selectedTools = getSelectedCatalogTools()
+  const primaryDisabled = state.loading || state.catalogLoading || selectedTools.length === 0
+
+  return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="modal modal-wide modal-add-mcp modal-add-mcp-catalog" role="dialog" aria-modal="true" aria-labelledby="add-tool-modal-title">
+        <button class="modal-close" data-action="cancel-add-tool" type="button" aria-label="${t('common.close')}">×</button>
+        <div class="modal-body modal-body-left">
+          <h3 id="add-tool-modal-title">${t('common.addMcp')}</h3>
+          <p>${t('common.chooseCatalogMcpToPrefill')}</p>
+        </div>
+        <div class="modal-tabs settings-segment settings-segment-theme modal-tabs-wide" role="tablist" aria-label="${t('common.addMcpMode')}">
+          <button data-action="switch-add-tool-tab" data-tab="catalog" class="settings-segment-button${state.addToolModalTab === 'catalog' ? ' active' : ''}" type="button">${t('common.fromCatalog')}</button>
+          <button data-action="switch-add-tool-tab" data-tab="manual" class="settings-segment-button${state.addToolModalTab === 'manual' ? ' active' : ''}" type="button">${t('common.manualInput')}</button>
+        </div>
+        <div class="modal-catalog">
+          <label class="modal-field modal-search-field">
+            <span class="modal-field-label">${t('common.searchMcp')}</span>
+            <input data-action="catalog-search" class="modal-input" type="text" value="${state.catalogSearch}" placeholder="${t('common.searchMcp')}" ${disabledAttr(state.loading)} />
+          </label>
+          ${
+            state.catalogLoading
+              ? `<div class="catalog-loading">${t('common.catalogLoading')}</div>`
+              : filteredTools.length === 0
+                ? `<div class="catalog-empty">${t('common.noCatalogMatches')}</div>`
+                : `
+                  <div class="catalog-list">
+                    ${filteredTools
+                      .map((tool) => {
+                        const selected = state.catalogSelectedToolNames.includes(tool.toolName)
+                        const disabled = tool.isRegistered || state.loading
+                        return `
+                          <button
+                            type="button"
+                            class="catalog-row${selected ? ' selected' : ''}${disabled ? ' disabled' : ''}"
+                            data-action="select-catalog-tool"
+                            data-tool="${tool.toolName}"
+                            ${disabledAttr(disabled)}
+                            title="${tool.isRegistered ? t('common.catalogAlreadyRegistered') : tool.description}"
+                          >
+                            <span class="tool-row-main">
+                              <span class="tool-avatar tool-avatar-${tool.toolName}">${getToolAvatarLabel(tool.toolName)}</span>
+                              <span class="tool-copy">
+                                <span class="tool-name">${tool.toolName}</span>
+                                <span class="tool-meta">${tool.description}</span>
+                              </span>
+                            </span>
+                            <span class="catalog-row-side">
+                              <span class="catalog-package">${tool.package}</span>
+                              ${
+                                tool.isRegistered
+                                  ? `<span class="pill pill-neutral">${t('common.registered')}</span>`
+                                  : selected
+                                    ? `<span class="catalog-check" aria-hidden="true">✓</span>`
+                                    : `<span class="catalog-check catalog-check-empty" aria-hidden="true"></span>`
+                              }
+                            </span>
+                          </button>
+                        `
+                      })
+                      .join('')}
+                  </div>
+                `
+          }
+          ${
+            selectedTools.length > 0
+              ? `
+                <div class="catalog-selection-summary">
+                  <span class="muted">${t('common.selectedCatalogMcps')}</span>
+                  <strong>${selectedTools.length}</strong>
+                  <span class="muted">${selectedTools.map((tool) => tool.toolName).join(', ')}</span>
+                </div>
+              `
+              : ''
+          }
+        </div>
+        <div class="modal-actions modal-actions-right">
+          <button data-action="cancel-add-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
+          <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(primaryDisabled)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.addSelected')}</span></button>
+        </div>
+      </section>
+    </div>
+  `
+}
+
 const removeMcpTool = async (toolName: string): Promise<void> => {
   if (!toolName) {
     return
@@ -734,45 +1005,24 @@ const renderAddToolModal = (): string => {
   }
 
   const isEditMode = state.toolModalMode === 'edit'
-  const title = isEditMode ? 'Edit MCP tool' : 'Add custom MCP tool'
-  const description = isEditMode
-    ? 'Update the workspace-level MCP tool entry and keep the same workspace registry item.'
-    : 'Create a workspace-level MCP tool entry before assigning it to AI clients.'
-  const primaryLabel = isEditMode ? 'Save Tool' : 'Add Tool'
+  if (isEditMode) {
+    return renderMcpManualForm(
+      'Save Tool',
+      t('common.editMcpTool'),
+      'Update the workspace-level MCP tool entry and keep the same workspace registry item.',
+    )
+  }
 
-  return `
-    <div class="modal-backdrop" role="presentation">
-      <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="add-tool-modal-title">
-        <div class="modal-icon" aria-hidden="true">${icon.sparkles}</div>
-        <div class="modal-body">
-          <h3 id="add-tool-modal-title">${title}</h3>
-          <p>${description}</p>
-        </div>
-        <div class="modal-form">
-          <label class="modal-field">
-            <span class="modal-field-label">Tool name</span>
-            <input data-action="add-tool-name" class="modal-input" type="text" value="${state.addToolName}" placeholder="my-mcp" ${disabledAttr(state.loading)} />
-          </label>
-          <label class="modal-field">
-            <span class="modal-field-label">Command</span>
-            <input data-action="add-tool-command" class="modal-input" type="text" value="${state.addToolCommand}" placeholder="npx" ${disabledAttr(state.loading)} />
-          </label>
-          <label class="modal-field">
-            <span class="modal-field-label">Args</span>
-            <textarea data-action="add-tool-args" class="modal-textarea" rows="4" placeholder="-y&#10;@modelcontextprotocol/server-filesystem&#10;." ${disabledAttr(state.loading)}>${state.addToolArgs}</textarea>
-          </label>
-          <label class="modal-field">
-            <span class="modal-field-label">Package</span>
-            <input data-action="add-tool-package" class="modal-input" type="text" value="${state.addToolPackage}" placeholder="@modelcontextprotocol/server-filesystem" ${disabledAttr(state.loading)} />
-          </label>
-        </div>
-        <div class="modal-actions">
-          <button data-action="cancel-add-tool" class="button secondary" ${disabledAttr(state.loading)}>Cancel</button>
-          <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${primaryLabel}</span></button>
-        </div>
-      </section>
-    </div>
-  `
+  if (state.addToolModalTab === 'manual') {
+    return renderMcpManualForm(
+      t('common.addMcp'),
+      t('common.addMcp'),
+      t('common.addMcpDescription'),
+      true,
+    )
+  }
+
+  return renderCatalogMcpModal()
 }
 
 const renderRemoveToolModal = (): string => {
@@ -785,13 +1035,12 @@ const renderRemoveToolModal = (): string => {
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-tool-modal-title">
         <div class="modal-icon modal-icon-danger" aria-hidden="true">${icon.warning}</div>
         <div class="modal-body">
-          <h3 id="remove-tool-modal-title">Remove MCP tool?</h3>
-          <p>This will remove <code>${state.removeToolName}</code> from the workspace registry.</p>
-          <p>The tool will no longer be available for AI client assignment.</p>
+          <h3 id="remove-tool-modal-title">${t('common.removeMcpToolQuestion')}</h3>
+          <p>${t('common.removeMcpToolDescription')} <code>${state.removeToolName}</code>.</p>
         </div>
         <div class="modal-actions">
-          <button data-action="cancel-remove-tool" class="button secondary" ${disabledAttr(state.loading)}>Cancel</button>
-          <button data-action="confirm-remove-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.dots}</span><span>Remove Tool</span></button>
+          <button data-action="cancel-remove-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('common.close')}</button>
+          <button data-action="confirm-remove-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.dots}</span><span>${t('common.remove')}</span></button>
         </div>
       </section>
     </div>
@@ -815,15 +1064,15 @@ const renderAssignedClientsModal = (): string => {
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="assigned-clients-modal-title">
         <div class="modal-icon" aria-hidden="true">${icon.warning}</div>
         <div class="modal-body">
-          <h3 id="assigned-clients-modal-title">${tool.toolName} is used by</h3>
+          <h3 id="assigned-clients-modal-title">${formatAssignedClientsTitle(assignedClients)}</h3>
           ${
             assignedClients.length > 0
               ? `<div class="assigned-clients-list">${assignedClients.map((client) => `<span class="pill pill-success">${client}</span>`).join('')}</div>`
-              : '<p>No AI clients are using this tool.</p>'
+              : `<p>${t('common.noAisUsingTool')}</p>`
           }
         </div>
         <div class="modal-actions">
-          <button data-action="close-assigned-clients" class="button secondary">Close</button>
+          <button data-action="close-assigned-clients" class="button secondary">${t('common.close')}</button>
         </div>
       </section>
     </div>
@@ -832,11 +1081,7 @@ const renderAssignedClientsModal = (): string => {
 
 const renderSidebarWorkspace = (): string => {
   const recentWorkspaces = readRecentWorkspaces()
-  const currentWorkspace = state.workspace ? { path: state.workspace.path, name: state.workspace.name } : null
-  const workspaceItems = [
-    ...(currentWorkspace ? [currentWorkspace] : []),
-    ...recentWorkspaces.filter((item) => item.path !== currentWorkspace?.path),
-  ]
+  const workspaceItems = recentWorkspaces
 
   if (workspaceItems.length === 0) {
     return `
@@ -920,9 +1165,9 @@ const renderNotInitializedState = (): string => {
       </section>
 
       <section class="info-card card">
-        <div class="info-card-header">What happens when you initialize?</div>
+        <div class="info-card-header">${t('common.initializeWorkspaceInfoTitle')}</div>
         <div class="info-card-body">
-          mcpspace will create a <code>.mcpspace</code> folder in this workspace and generate a <code>config.yaml</code> file with default settings. You can customize the configuration after initialization.
+          ${formatInitializeWorkspaceInfoBody()}
         </div>
       </section>
     </div>
@@ -1057,7 +1302,7 @@ const renderReadyState = (): string => {
   const clients = clientOrder
   const tools = status?.tools ?? []
   const selectedClient = getSelectedClient()
-  const selectedClientLabel = selectedClient ? getClientDisplayName(selectedClient) : 'Select an AI client'
+  const selectedClientLabel = selectedClient ? getClientDisplayName(selectedClient) : t('common.selectAiClientToBegin')
   const selectedClientDraft = selectedClient ? getDraftToolsForClient(selectedClient) : []
   const selectedClientPlan = selectedClient ? state.plan : null
   const changeRows = selectedClientPlan?.actions ?? []
@@ -1072,7 +1317,7 @@ const renderReadyState = (): string => {
             <h2>${t('common.workspaceMcpTools')}</h2>
             <p class="muted">${t('common.manageWorkspaceMcpTools')}</p>
           </div>
-          <button data-action="add-custom-tool" class="button secondary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>${t('common.addCustomTool')}</span></button>
+          <button data-action="add-mcp" class="button secondary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>${t('common.addMcp')}</span></button>
         </div>
 
         <div class="registry-list">
@@ -1091,14 +1336,14 @@ const renderReadyState = (): string => {
                           </span>
                         </span>
                         <span class="registry-actions">
-                          <span class="pill pill-neutral">Registered</span>
+                          <span class="pill pill-neutral">${t('common.registered')}</span>
                           ${
                             tool.clients.length > 0
-                              ? `<button type="button" class="assigned-clients-pill" data-action="open-assigned-clients" data-tool="${tool.toolName}" title="Used by ${tool.clients.map((client) => getClientDisplayName(client)).join(', ')}"><span class="assigned-dot"></span><span>Used by ${tool.clients.length} AI${tool.clients.length === 1 ? '' : 's'}</span></button>`
+                              ? `<button type="button" class="assigned-clients-pill" data-action="open-assigned-clients" data-tool="${tool.toolName}" title="${formatAssignedClientsTitle(tool.clients.map((client) => getClientDisplayName(client)))}"><span class="assigned-dot"></span><span>${formatUsedByLabel(tool.clients.length)}</span></button>`
                               : ''
                           }
-                          <button data-action="edit-mcp" data-tool="${tool.toolName}" class="button secondary registry-action toolbar-button" type="button" title="Edit MCP tool"><span>Edit</span></button>
-                          <button data-action="remove-mcp" data-tool="${tool.toolName}" class="button danger registry-action toolbar-button" type="button" ${disabledAttr(tool.clients.length > 0)} title="${tool.clients.length > 0 ? `Assigned to ${tool.clients.map((client) => getClientDisplayName(client)).join(', ')}` : 'Remove MCP tool'}"><span>Remove</span></button>
+                          <button data-action="edit-mcp" data-tool="${tool.toolName}" class="button secondary registry-action toolbar-button" type="button" title="${t('common.edit')} MCP tool"><span>${t('common.edit')}</span></button>
+                          <button data-action="remove-mcp" data-tool="${tool.toolName}" class="button danger registry-action toolbar-button" type="button" ${disabledAttr(tool.clients.length > 0)} title="${tool.clients.length > 0 ? formatAssignedClientsTitle(tool.clients.map((client) => getClientDisplayName(client))) : t('common.removeMcpToolQuestion')}"><span>${t('common.remove')}</span></button>
                         </span>
                       </div>
                     `,
@@ -1256,8 +1501,8 @@ const renderReadyState = (): string => {
                         },
                       )
                       .join('')
-                : '<div class="changes-empty">Loading changes...</div>'
-              : '<div class="changes-empty">Select an AI client to review changes.</div>'
+                : `<div class="changes-empty">${t('common.loadingChanges')}</div>`
+              : `<div class="changes-empty">${t('common.selectAiClientToReviewChanges')}</div>`
           }
         </div>
 
@@ -1308,13 +1553,13 @@ const renderInitConfirmModal = (): string => {
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="init-workspace-modal-title">
         <div class="modal-icon" aria-hidden="true">${icon.warning}</div>
         <div class="modal-body">
-          <h3 id="init-workspace-modal-title">Initialize workspace?</h3>
-          <p>This will create <code>.mcpspace/config.yaml</code> in the selected workspace.</p>
-          <p>You can edit the configuration after initialization.</p>
+          <h3 id="init-workspace-modal-title">${t('common.initializeWorkspaceQuestion')}</h3>
+          <p>${formatInitializeWorkspaceInfoBody()}</p>
+          <p>${t('common.initializeWorkspaceInfoFooter')}</p>
         </div>
         <div class="modal-actions">
-          <button data-action="cancel-init-workspace" class="button secondary" ${disabledAttr(state.loading)}>Cancel</button>
-          <button data-action="confirm-init-workspace" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>Initialize Workspace</span></button>
+          <button data-action="cancel-init-workspace" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
+          <button data-action="confirm-init-workspace" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.initializeWorkspace')}</span></button>
         </div>
       </section>
     </div>
@@ -1378,7 +1623,7 @@ const bindActionHandlers = (): void => {
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('[data-action="add-custom-tool"]').forEach((button) => {
+  document.querySelectorAll<HTMLButtonElement>('[data-action="add-mcp"]').forEach((button) => {
     button.addEventListener('click', () => {
       openAddToolModal()
     })
@@ -1448,9 +1693,54 @@ const bindActionHandlers = (): void => {
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
       const toolPackage = state.addToolPackage.trim()
+      const selectedCatalogTools = getSelectedCatalogTools()
+      const catalogMode = state.addToolModalTab === 'catalog' && mode === 'add'
 
       closeAddToolModal()
+
+      if (catalogMode) {
+        for (const tool of selectedCatalogTools) {
+          await saveTool(tool.toolName, tool.command, tool.args, tool.package, 'add', null)
+        }
+        return
+      }
+
       await saveTool(toolName, command, args, toolPackage, mode, originalName)
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="switch-add-tool-tab"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const tab = button.dataset.tab as ViewState['addToolModalTab'] | undefined
+      if (!tab || state.addToolModalTab === tab) {
+        return
+      }
+
+      state.addToolModalTab = tab
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLInputElement>('[data-action="catalog-search"]').forEach((input) => {
+    input.addEventListener('input', () => {
+      state.catalogSearch = input.value
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="select-catalog-tool"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const toolName = button.dataset.tool
+      if (!toolName) {
+        return
+      }
+
+      const tool = state.catalogTools.find((item) => item.toolName === toolName)
+      if (!tool || tool.isRegistered) {
+        return
+      }
+
+      toggleCatalogTool(tool)
     })
   })
 
@@ -1765,11 +2055,11 @@ const loadWorkspace = async (): Promise<void> => {
   rememberWorkspace(currentResult.data)
 
   if (currentResult.data === null && state.autoOpenLastWorkspace) {
-    const recentWorkspace = readRecentWorkspaces()[0]
-    if (recentWorkspace) {
+    const recentWorkspacePath = readLastWorkspacePath()
+    if (recentWorkspacePath) {
       state.loading = false
       render()
-      await openWorkspacePath(recentWorkspace.path)
+      await openWorkspacePath(recentWorkspacePath)
       return
     }
   }

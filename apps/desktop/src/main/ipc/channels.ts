@@ -12,6 +12,7 @@ export const IPC_CHANNELS = {
     mcpAdd: 'workspace:mcp-add',
     mcpUpdate: 'workspace:mcp-update',
     mcpRemove: 'workspace:mcp-remove',
+    catalogList: 'workspace:catalog-list',
     copyPath: 'workspace:copy-path',
     openInExplorer: 'workspace:open-in-explorer',
   },

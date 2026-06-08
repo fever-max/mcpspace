@@ -21,6 +21,32 @@ type I18nKey =
   | 'common.openInExplorer'
   | 'common.refresh'
   | 'common.addCustomTool'
+  | 'common.addMcp'
+  | 'common.toolName'
+  | 'common.command'
+  | 'common.args'
+  | 'common.package'
+  | 'common.loadingChanges'
+  | 'common.initializeWorkspaceQuestion'
+  | 'common.initializeWorkspaceInfoTitle'
+  | 'common.initializeWorkspaceInfoBody'
+  | 'common.initializeWorkspaceInfoFooter'
+  | 'common.addMcpMode'
+  | 'common.fromCatalog'
+  | 'common.manualInput'
+  | 'common.searchMcp'
+  | 'common.addSelected'
+  | 'common.chooseCatalogMcpToPrefill'
+  | 'common.noCatalogMatches'
+  | 'common.catalogLoading'
+  | 'common.catalogAlreadyRegistered'
+  | 'common.selectedCatalogMcp'
+  | 'common.selectedCatalogMcps'
+  | 'common.addMcpDescription'
+  | 'common.editMcpTool'
+  | 'common.removeMcpToolQuestion'
+  | 'common.removeMcpToolDescription'
+  | 'common.close'
   | 'common.workspaceMcpTools'
   | 'common.manageWorkspaceMcpTools'
   | 'common.noMcpToolsRegistered'
@@ -126,6 +152,32 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.openInExplorer': 'Open in Explorer',
     'common.refresh': 'Refresh',
     'common.addCustomTool': 'Add Custom Tool',
+    'common.addMcp': 'Add MCP',
+    'common.toolName': 'Tool name',
+    'common.command': 'Command',
+    'common.args': 'Args',
+    'common.package': 'Package',
+    'common.loadingChanges': 'Loading changes...',
+    'common.initializeWorkspaceQuestion': 'Initialize workspace?',
+    'common.initializeWorkspaceInfoTitle': 'What happens when you initialize?',
+    'common.initializeWorkspaceInfoBody': 'mcpspace will create a .mcpspace folder in this workspace and generate a config.yaml file with default settings. You can customize the configuration after initialization.',
+    'common.initializeWorkspaceInfoFooter': 'You can customize the configuration after initialization.',
+    'common.addMcpMode': 'Add MCP mode',
+    'common.fromCatalog': 'From Catalog',
+    'common.manualInput': 'Manual Input',
+    'common.searchMcp': 'Search MCPs',
+    'common.addSelected': 'Add Selected',
+    'common.chooseCatalogMcpToPrefill': 'Choose a catalog MCP to prefill command and args.',
+    'common.noCatalogMatches': 'No catalog MCPs match your search.',
+    'common.catalogLoading': 'Loading catalog MCPs...',
+    'common.catalogAlreadyRegistered': 'Already registered in this workspace.',
+    'common.selectedCatalogMcp': 'Selected MCP',
+    'common.selectedCatalogMcps': 'Selected MCPs',
+    'common.addMcpDescription': 'Create a workspace-level MCP tool entry before assigning it to AI clients.',
+    'common.editMcpTool': 'Edit MCP tool',
+    'common.removeMcpToolQuestion': 'Remove MCP tool?',
+    'common.removeMcpToolDescription': 'This will remove the tool from the workspace registry and it will no longer be available for AI client assignment.',
+    'common.close': 'Close',
     'common.workspaceMcpTools': 'Workspace MCP Tools',
     'common.manageWorkspaceMcpTools': 'Manage the MCP tools registered in this workspace.',
     'common.noMcpToolsRegistered': 'No MCP tools registered.',
@@ -225,6 +277,32 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.openInExplorer': '탐색기에서 열기',
     'common.refresh': '새로고침',
     'common.addCustomTool': '사용자 MCP 추가',
+    'common.addMcp': 'MCP 추가',
+    'common.toolName': '도구 이름',
+    'common.command': '명령어',
+    'common.args': '인수',
+    'common.package': '패키지',
+    'common.loadingChanges': '변경 사항을 불러오는 중...',
+    'common.initializeWorkspaceQuestion': '작업 폴더를 초기화할까요?',
+    'common.initializeWorkspaceInfoTitle': '초기화하면 어떻게 되나요?',
+    'common.initializeWorkspaceInfoBody': 'mcpspace는 이 작업 폴더에 .mcpspace 폴더를 만들고 기본 설정이 들어간 config.yaml 파일을 생성합니다. 초기화 후 설정을 수정할 수 있습니다.',
+    'common.initializeWorkspaceInfoFooter': '초기화 후 설정을 수정할 수 있습니다.',
+    'common.addMcpMode': 'MCP 추가 모드',
+    'common.fromCatalog': '카탈로그에서',
+    'common.manualInput': '직접 입력',
+    'common.searchMcp': 'MCP 검색',
+    'common.addSelected': '선택 항목 추가',
+    'common.chooseCatalogMcpToPrefill': '카탈로그의 MCP를 선택하면 command와 args가 자동 입력됩니다.',
+    'common.noCatalogMatches': '검색 결과와 일치하는 카탈로그 MCP가 없습니다.',
+    'common.catalogLoading': '카탈로그 MCP를 불러오는 중입니다...',
+    'common.catalogAlreadyRegistered': '이 작업 폴더에 이미 등록됨',
+    'common.selectedCatalogMcp': '선택된 MCP',
+    'common.selectedCatalogMcps': '선택된 MCP들',
+    'common.addMcpDescription': 'AI 클라이언트에 연결할 MCP 도구 항목을 작업 폴더에 등록합니다.',
+    'common.editMcpTool': 'MCP 도구 수정',
+    'common.removeMcpToolQuestion': 'MCP 도구를 제거할까요?',
+    'common.removeMcpToolDescription': '이 도구를 작업 폴더의 레지스트리에서 제거합니다. 이후 AI 클라이언트에 할당할 수 없습니다.',
+    'common.close': '닫기',
     'common.workspaceMcpTools': 'MCP 도구',
     'common.manageWorkspaceMcpTools': '해당 작업 폴더에 등록된 MCP 도구를 관리합니다.',
     'common.noMcpToolsRegistered': '등록된 MCP 도구가 없습니다.',

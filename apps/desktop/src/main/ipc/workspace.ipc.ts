@@ -24,6 +24,7 @@ import type {
   WorkspaceOpenResponse,
   WorkspaceStatusErrorCode,
   WorkspaceStatusResponse,
+  WorkspaceCatalogListResponse,
 } from './types.js'
 import type { SyncPlanDto } from '../../shared/dtos.js'
 import type { DesktopServices } from '../services/create-desktop-services.js'
@@ -298,6 +299,15 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
     }
     },
   )
+
+  ipcMain.handle(IPC_CHANNELS.workspace.catalogList, async (): Promise<WorkspaceCatalogListResponse> => {
+    try {
+      const catalog = await services.workspaceSession.catalogList()
+      return ok(catalog)
+    } catch (error) {
+      return fail('UNKNOWN_ERROR', error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
 
   ipcMain.handle(IPC_CHANNELS.workspace.copyPath, async (_event, path: string): Promise<WorkspaceCopyPathResponse> => {
     try {

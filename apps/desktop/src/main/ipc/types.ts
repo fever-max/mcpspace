@@ -1,5 +1,6 @@
 import type {
   IpcResult,
+  McpCatalogListDto,
   SyncPlanDto,
   WorkspaceContextDto,
   WorkspaceStatusDto,
@@ -44,6 +45,8 @@ export type WorkspaceSyncErrorCode =
 
 export type WorkspaceCopyPathErrorCode = 'UNKNOWN_ERROR'
 
+export type WorkspaceCatalogListErrorCode = 'UNKNOWN_ERROR'
+
 export type WorkspaceMcpMutationErrorCode =
   | 'WORKSPACE_NOT_OPEN'
   | 'WORKSPACE_NOT_INITIALIZED'
@@ -74,4 +77,5 @@ export type WorkspaceMcpAddOptions = {
 }
 export type WorkspaceMcpMutationResponse = IpcResult<WorkspaceStatusDto, WorkspaceMcpMutationErrorCode>
 export type WorkspaceMcpUpdateResponse = IpcResult<WorkspaceStatusDto, WorkspaceMcpMutationErrorCode>
+export type WorkspaceCatalogListResponse = IpcResult<McpCatalogListDto, WorkspaceCatalogListErrorCode>
 export type WorkspaceOpenInExplorerResponse = IpcResult<void, WorkspaceOpenInExplorerErrorCode>

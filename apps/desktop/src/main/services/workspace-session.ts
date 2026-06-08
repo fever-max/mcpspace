@@ -28,10 +28,13 @@ import {
   type McpRegistryService,
   type WorkspaceService,
 } from '@mcpspace/workspace'
+import { MCP_CATALOG } from '@mcpspace/workspace'
 
 import {
   type ClientId,
   type ClientStatusDto,
+  type McpCatalogEntryDto,
+  type McpCatalogListDto,
   type McpConfigDto,
   type WorkspaceContextDto,
   type WorkspaceContextStatus,
@@ -308,6 +311,31 @@ export class WorkspaceSession {
       outOfSyncCount,
       inSyncCount: clients.length - outOfSyncCount,
     }
+  }
+
+  async catalogList(): Promise<McpCatalogListDto> {
+    const registeredTools = new Set<string>()
+
+    if (this.currentWorkspace?.status === 'ready') {
+      const config = await this.ensureRuntime().configLoader.loadProjectConfig()
+      for (const toolName of Object.keys(config.mcps)) {
+        registeredTools.add(toolName)
+      }
+    }
+
+    const items: McpCatalogEntryDto[] = Object.entries(MCP_CATALOG)
+      .map(([toolName, entry]) => ({
+        toolName,
+        package: entry.package,
+        command: entry.command,
+        args: [...entry.args],
+        env: { ...entry.env },
+        description: entry.description,
+        isRegistered: registeredTools.has(toolName),
+      }))
+      .sort((a, b) => a.toolName.localeCompare(b.toolName))
+
+    return { items }
   }
 
   private ensureReadyWorkspace(): WorkspaceContextDto {

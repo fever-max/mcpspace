@@ -157,11 +157,11 @@
 
 ### 사이드바 메뉴 정리
 
-- [ ] Changes 메뉴 제거 (Ready State의 Changes to Apply와 중복)
-- [ ] Marketplace 클릭 시 "Coming Soon" 카드 표시
-- [ ] Doctor 클릭 시 Doctor 화면 표시
-- [ ] Settings 클릭 시 설정 화면 표시
-- [ ] `state.activeSection`으로 활성 메뉴 관리, 메인 영역 분기 렌더링
+- [x] Changes 메뉴 제거 (Ready State의 Changes to Apply와 중복)
+- [x] Marketplace 클릭 시 "Coming Soon" 카드 표시
+- [x] Doctor 클릭 시 Doctor 화면 표시
+- [x] Settings 클릭 시 설정 화면 표시
+- [x] `state.activeSection`으로 활성 메뉴 관리, 메인 영역 분기 렌더링
 
 ### Settings 화면
 
@@ -223,11 +223,11 @@ Doctor 화면은 workspace 상태 진단을 제공한다. `workspace:doctor` IPC
 
 "Add MCP" 모달에서 카탈로그를 바로 선택할 수 있게 한다.
 
-- [ ] "Add Custom Tool" 버튼 이름 → "Add MCP"로 변경
-- [ ] Add MCP 모달 2탭 구조로 개편
+- [x] "Add Custom Tool" 버튼 이름 → "Add MCP"로 변경
+- [x] Add MCP 모달 2탭 구조로 개편
   - **From Catalog 탭**: `catalog.ts` 목록 표시 (이름, 설명), 선택 시 command/args 자동 입력, 이미 등록된 MCP는 비활성화
   - **Custom 탭**: 기존 수동 입력 방식 유지
-- [ ] `workspace:catalog-list` IPC 채널 추가 또는 preload에서 catalog 직접 노출
+- [x] `workspace:catalog-list` IPC 채널 추가 또는 preload에서 catalog 직접 노출
 
 ---
 

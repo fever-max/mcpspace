@@ -48,6 +48,20 @@ export type McpListDto = {
   items: McpConfigDto[]
 }
 
+export type McpCatalogEntryDto = {
+  toolName: string
+  package: string
+  command: string
+  args: string[]
+  env: Record<string, string>
+  description: string
+  isRegistered: boolean
+}
+
+export type McpCatalogListDto = {
+  items: McpCatalogEntryDto[]
+}
+
 export type PlanActionDto = {
   type: 'create' | 'update' | 'delete' | 'noop'
   toolName: string

@@ -1,6 +1,7 @@
 import type {
   ClientId,
   IpcResult,
+  McpCatalogListDto,
   SyncPlanDto,
   WorkspaceContextDto,
   WorkspaceStatusDto,
@@ -23,6 +24,7 @@ declare global {
         mcpAdd(toolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
         mcpUpdate(toolName: string, nextToolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
         mcpRemove(toolName: string): Promise<IpcResult<WorkspaceStatusDto>>
+        catalogList(): Promise<IpcResult<McpCatalogListDto>>
         copyPath(path: string): Promise<IpcResult<void>>
         openInExplorer(path: string): Promise<IpcResult<void>>
       }
