@@ -1276,11 +1276,11 @@ const renderReadyState = (): string => {
 }
 const renderWorkspaceBody = (): string => {
   if (state.activeSection === 'marketplace') {
-    return renderComingSoonSection('Marketplace', 'Marketplace is coming soon.')
+    return renderComingSoonSection(t('common.marketplace'), t('common.marketplaceComingSoon'))
   }
 
   if (state.activeSection === 'doctor') {
-    return renderComingSoonSection('Doctor', 'Diagnostic tools are coming soon.')
+    return renderComingSoonSection(t('common.doctor'), t('common.diagnosticToolsComingSoon'))
   }
 
   if (state.activeSection === 'settings') {
@@ -1647,17 +1647,17 @@ const render = (): void => {
     marketplace: {
       eyebrow: '',
       title: t('common.marketplace'),
-      subtitle: 'Marketplace is coming soon.',
+      subtitle: t('common.marketplaceComingSoon'),
     },
     doctor: {
       eyebrow: '',
       title: t('common.doctor'),
-      subtitle: 'Diagnostic tools are coming soon.',
+      subtitle: t('common.diagnosticToolsComingSoon'),
     },
     settings: {
       eyebrow: '',
       title: t('common.settingsTitle'),
-      subtitle: 'Configure mcpspace to fit your workflow.',
+      subtitle: t('settings.subtitle'),
     },
   }
 

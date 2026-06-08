@@ -217,18 +217,30 @@ Doctor 화면은 workspace 상태 진단을 제공한다. `workspace:doctor` IPC
 
 ### Catalog
 
-- [ ] 자주 쓰는 MCP 추가 (brave-search, sqlite, postgres 등)
+- [x] 자주 쓰는 MCP 추가 (filesystem, github, postgres, sqlite, slack, brave-search 등 12개)
+
+### Add MCP 모달 개선
+
+"Add MCP" 모달에서 카탈로그를 바로 선택할 수 있게 한다.
+
+- [ ] "Add Custom Tool" 버튼 이름 → "Add MCP"로 변경
+- [ ] Add MCP 모달 2탭 구조로 개편
+  - **From Catalog 탭**: `catalog.ts` 목록 표시 (이름, 설명), 선택 시 command/args 자동 입력, 이미 등록된 MCP는 비활성화
+  - **Custom 탭**: 기존 수동 입력 방식 유지
+- [ ] `workspace:catalog-list` IPC 채널 추가 또는 preload에서 catalog 직접 노출
 
 ---
 
 ## P3 — 장기
 
 - [ ] 멀티 프로젝트 탭 UI
-- [ ] Remote catalog (`mcpspace catalog add <url>`)
+- [ ] Marketplace 화면 (원격 카탈로그 연동)
+  - `fever-max/mcpspace-catalog` GitHub 레포에 JSON으로 카탈로그 관리
+  - 앱에서 GitHub raw URL로 fetch, 로컬 카탈로그와 병합
+  - 커뮤니티 PR로 MCP 추가 가능
 - [ ] Profiles (프로젝트별 MCP 세트)
 - [ ] export / import
 - [ ] config 마이그레이션 자동화
-- [ ] MCP Marketplace
 
 ---
 

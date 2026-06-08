@@ -63,6 +63,8 @@ type I18nKey =
   | 'common.settings'
   | 'common.marketplace'
   | 'common.doctor'
+  | 'common.diagnosticToolsComingSoon'
+  | 'common.marketplaceComingSoon'
   | 'common.workspaces'
   | 'common.settingsTitle'
   | 'settings.title'
@@ -163,6 +165,8 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.settings': 'Settings',
     'common.marketplace': 'Marketplace',
     'common.doctor': 'Doctor',
+    'common.diagnosticToolsComingSoon': 'Diagnostic tools are coming soon.',
+    'common.marketplaceComingSoon': 'Marketplace is coming soon.',
     'common.workspaces': 'Workspaces',
     'common.settingsTitle': 'Settings',
     'settings.title': 'Settings',
@@ -259,7 +263,9 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.noop': '변경 없음',
     'common.settings': '설정',
     'common.marketplace': '마켓플레이스',
-    'common.doctor': '닥터',
+    'common.doctor': '진단',
+    'common.diagnosticToolsComingSoon': '진단 도구는 곧 제공됩니다.',
+    'common.marketplaceComingSoon': '마켓플레이스는 곧 제공됩니다.',
     'common.workspaces': '작업 폴더',
     'common.settingsTitle': '설정',
     'settings.title': '설정',
