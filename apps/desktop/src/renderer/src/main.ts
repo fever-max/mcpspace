@@ -467,10 +467,10 @@ const refreshWorkspaceView = async (): Promise<void> => {
 
 const getClientStatusLabel = (client: ClientStatusDto): string => {
   if (client.assignedMcpCount === 0) {
-    return 'Not Configured'
+    return t('common.notConfigured')
   }
 
-  return client.outOfSync ? 'Out of Sync' : 'In Sync'
+  return client.outOfSync ? t('common.outOfSync') : t('common.inSync')
 }
 
 const getClientStatusClass = (client: ClientStatusDto): string => {
@@ -489,7 +489,7 @@ const getFixedClientStatus = (clientName: ClientId): ClientStatusDto | null => {
 const getClientRowStatusLabel = (clientName: ClientId): string => {
   const client = getFixedClientStatus(clientName)
   if (!client) {
-    return 'Not Configured'
+    return t('common.notConfigured')
   }
 
   return getClientStatusLabel(client)
@@ -841,16 +841,16 @@ const renderSidebarWorkspace = (): string => {
   if (workspaceItems.length === 0) {
     return `
       <section class="sidebar-workspaces empty">
-        <div class="sidebar-workspaces-heading">Your Workspaces</div>
-        <div class="sidebar-empty-title">No workspaces yet</div>
-        <div class="sidebar-empty-subtitle">Open a project folder to get started.</div>
+        <div class="sidebar-workspaces-heading">${t('common.workspaces')}</div>
+        <div class="sidebar-empty-title">${t('common.noWorkspacesYet')}</div>
+        <div class="sidebar-empty-subtitle">${t('common.openWorkspaceToGetStarted')}</div>
       </section>
     `
   }
 
   return `
     <section class="sidebar-workspaces">
-      <div class="sidebar-workspaces-heading">Your Workspaces</div>
+      <div class="sidebar-workspaces-heading">${t('common.workspaces')}</div>
       ${workspaceItems
         .map(
           (workspace) => `
@@ -880,12 +880,12 @@ const renderEmptyState = (): string => `
       <div class="hero-folder"></div>
     </div>
     <div class="hero-copy">
-      <div class="hero-title">No workspace connected</div>
-      <p class="hero-description">Open a project folder to connect a workspace and start managing MCP tools for your AI clients.</p>
+      <div class="hero-title">${t('common.noWorkspaceConnected')}</div>
+      <p class="hero-description">${t('common.openProjectFolderToConnect')}</p>
     </div>
     <div class="hero-actions">
-      <button data-action="open-workspace" class="button primary"><span class="button-icon">${icon.folder}</span><span>Open Workspace</span></button>
-      <button class="ghost-link" type="button" disabled><span class="button-icon link-icon">${icon.book}</span><span>Learn more about workspaces</span></button>
+      <button data-action="open-workspace" class="button primary"><span class="button-icon">${icon.folder}</span><span>${t('common.openWorkspace')}</span></button>
+      <button class="ghost-link" type="button" disabled><span class="button-icon link-icon">${icon.book}</span><span>${t('common.learnMoreAboutWorkspaces')}</span></button>
     </div>
   </section>
 `
@@ -907,15 +907,15 @@ const renderNotInitializedState = (): string => {
           <div class="hero-warning-mark">${icon.warning}</div>
         </div>
         <div class="hero-copy">
-          <div class="hero-title">Workspace not initialized</div>
-          <p class="hero-description">This workspace has been opened, but it has not been initialized yet.</p>
-          <div class="hero-chip">.mcpspace/config.yaml</div>
-          <p class="hero-subtext">The configuration file .mcpspace/config.yaml does not exist in this workspace.</p>
-          <p class="hero-subtext">Initialize the workspace to set up MCP tools, AI clients, and other project-specific configurations.</p>
+          <div class="hero-title">${t('common.workspaceNotInitialized')}</div>
+          <p class="hero-description">${t('common.workspaceNotInitializedDescription')}</p>
+          <div class="hero-chip">${t('common.configPathLabel')}</div>
+          <p class="hero-subtext">${t('common.configFileDoesNotExist')}</p>
+          <p class="hero-subtext">${t('common.initInstructions')}</p>
         </div>
         <div class="hero-actions">
-          <button data-action="show-init-confirm" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>Initialize Workspace</span></button>
-          <button data-action="open-workspace" class="button secondary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.folder}</span><span>Open Another Workspace</span></button>
+          <button data-action="show-init-confirm" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.initializeWorkspace')}</span></button>
+          <button data-action="open-workspace" class="button secondary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.folder}</span><span>${t('common.openAnotherWorkspace')}</span></button>
         </div>
       </section>
 
@@ -1069,16 +1069,16 @@ const renderReadyState = (): string => {
       <section class="card panel registry-panel">
         <div class="panel-header panel-header-split">
           <div>
-            <h2>Workspace MCP Tools</h2>
-            <p class="muted">Manage the MCP tools registered in this workspace.</p>
+            <h2>${t('common.workspaceMcpTools')}</h2>
+            <p class="muted">${t('common.manageWorkspaceMcpTools')}</p>
           </div>
-          <button data-action="add-custom-tool" class="button secondary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>Add Custom Tool</span></button>
+          <button data-action="add-custom-tool" class="button secondary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>${t('common.addCustomTool')}</span></button>
         </div>
 
         <div class="registry-list">
           ${
             tools.length === 0
-              ? '<div class="list-empty">No MCP tools registered.</div>'
+              ? `<div class="list-empty">${t('common.noMcpToolsRegistered')}</div>`
               : tools
                   .map(
                     (tool) => `
@@ -1111,8 +1111,8 @@ const renderReadyState = (): string => {
       <section class="ready-grid">
         <section class="card panel">
           <div class="panel-header">
-          <h2>AI Clients</h2>
-          <p class="muted">Select an AI client to manage its MCP tools.</p>
+          <h2>${t('common.aiClients')}</h2>
+          <p class="muted">${t('common.selectAiClientToManage')}</p>
         </div>
         <div class="client-list">
           ${
@@ -1141,17 +1141,17 @@ const renderReadyState = (): string => {
               .join('')
           }
           </div>
-          <div class="client-footnote">${selectedClient ? `1 of ${clients.length} selected` : 'Select an AI client to begin.'}</div>
+          <div class="client-footnote">${selectedClient ? `1 of ${clients.length} selected` : t('common.selectAiClientToBegin')}</div>
         </section>
 
         <section class="card panel">
           <div class="panel-header panel-header-split">
             <div>
-              <h2>MCP Tools for ${selectedClientLabel}</h2>
-              <p class="muted">Choose which MCP tools should be available to ${selectedClientLabel}.</p>
+              <h2>${t('common.mcpToolsFor')} ${selectedClientLabel}</h2>
+              <p class="muted">${t('common.chooseWhichMcpToolsShouldBeAvailable')} ${selectedClientLabel}.</p>
             </div>
             <div class="selected-client-chip">
-              <span class="selected-client-label">Selected Client</span>
+              <span class="selected-client-label">${t('common.selectedClient')}</span>
               <span class="pill pill-neutral">${selectedClientLabel}</span>
             </div>
           </div>
@@ -1162,7 +1162,7 @@ const renderReadyState = (): string => {
                 <div class="tool-list">
                   ${
                     tools.length === 0
-                      ? '<div class="list-empty">No MCP tools registered.</div>'
+                      ? `<div class="list-empty">${t('common.noMcpToolsRegistered')}</div>`
                       : tools
                           .map(
                             (tool) => {
@@ -1194,17 +1194,17 @@ const renderReadyState = (): string => {
                 </div>
                 <div class="tool-footnote">${selectedClientDraft.length} of ${tools.length} selected</div>
               `
-              : '<div class="selected-client-empty list-empty">Select an AI client to manage its MCP tools.</div>'
+              : `<div class="selected-client-empty list-empty">${t('common.selectAiClientToManage')}</div>`
           }
         </section>
       </section>
 
       <section class="card panel changes-panel">
         <div class="panel-header changes-header">
-          <div>
-            <h2>Changes to Apply</h2>
-            <p class="muted">Review the changes that will be applied to ${selectedClientLabel}.</p>
-          </div>
+            <div>
+              <h2>${t('common.changesToApply')}</h2>
+              <p class="muted">${t('common.reviewChanges')} ${selectedClientLabel}.</p>
+            </div>
         </div>
 
         <div class="changes-list">
@@ -1249,8 +1249,8 @@ const renderReadyState = (): string => {
                           return `
                             <div class="change-row change-noop">
                               <span class="change-icon">•</span>
-                              <span>No change for <strong>${action.toolName}</strong></span>
-                              <span class="pill pill-neutral">No Change</span>
+                                <span>${t('common.noChangeFor')} <strong>${action.toolName}</strong></span>
+                              <span class="pill pill-neutral">${t('common.noop')}</span>
                             </div>
                           `
                         },
@@ -1261,11 +1261,11 @@ const renderReadyState = (): string => {
           }
         </div>
 
-        ${selectedClientPlan ? `<div class="changes-summary muted">${selectedClientPlan.summary.create} create, ${selectedClientPlan.summary.update} update, ${selectedClientPlan.summary.delete} delete, ${selectedClientPlan.summary.noop} no change</div>` : ''}
+        ${selectedClientPlan ? `<div class="changes-summary muted">${selectedClientPlan.summary.create} ${t('common.create')}, ${selectedClientPlan.summary.update} ${t('common.update')}, ${selectedClientPlan.summary.delete} ${t('common.delete')}, ${selectedClientPlan.summary.noop} ${t('common.noop')}</div>` : ''}
 
         <div class="changes-footer">
-          <button data-action="refresh-plan" class="button secondary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.search}</span><span>Review Changes</span></button>
-          <button data-action="sync-client" class="button primary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.refresh}</span><span>Apply Changes</span></button>
+          <button data-action="refresh-plan" class="button secondary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.search}</span><span>${t('common.reviewChanges')}</span></button>
+          <button data-action="sync-client" class="button primary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.refresh}</span><span>${t('common.applyChanges')}</span></button>
         </div>
       </section>
       <section class="status-summary">
@@ -1640,23 +1640,23 @@ const render = (): void => {
   const badgeClass = getWorkspaceBadgeClass(state.workspace, state.status)
   const sectionHeadings: Record<ViewState['activeSection'], { eyebrow: string; title: string; subtitle: string }> = {
     workspaces: {
-      eyebrow: 'Workspace',
-      title: state.workspace ? state.workspace.name : 'No workspace connected',
-      subtitle: state.workspace ? state.workspace.path : 'Open a project folder to connect a workspace and start managing MCP tools for your AI clients.',
+      eyebrow: t('common.workspace'),
+      title: state.workspace ? state.workspace.name : t('common.noWorkspaceConnected'),
+      subtitle: state.workspace ? state.workspace.path : t('common.openProjectFolderToConnect'),
     },
     marketplace: {
       eyebrow: '',
-      title: 'Marketplace',
+      title: t('common.marketplace'),
       subtitle: 'Marketplace is coming soon.',
     },
     doctor: {
       eyebrow: '',
-      title: 'Doctor',
+      title: t('common.doctor'),
       subtitle: 'Diagnostic tools are coming soon.',
     },
     settings: {
       eyebrow: '',
-      title: 'Settings',
+      title: t('common.settingsTitle'),
       subtitle: 'Configure mcpspace to fit your workflow.',
     },
   }
@@ -1671,16 +1671,16 @@ const render = (): void => {
       <aside class="sidebar">
         <div class="brand"><img class="brand-logo" src="${brandLogoUrl}" alt="" aria-hidden="true" /><span>mcpspace</span></div>
         <nav class="nav">
-          <button data-action="select-section" data-section="workspaces" class="nav-item${state.activeSection === 'workspaces' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.folder}</span><span>Workspaces</span></button>
-          <button data-action="select-section" data-section="marketplace" class="nav-item${state.activeSection === 'marketplace' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.search}</span><span>Marketplace</span></button>
-          <button data-action="select-section" data-section="doctor" class="nav-item${state.activeSection === 'doctor' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.warning}</span><span>Doctor</span></button>
-          <button data-action="select-section" data-section="settings" class="nav-item${state.activeSection === 'settings' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.dots}</span><span>Settings</span></button>
+          <button data-action="select-section" data-section="workspaces" class="nav-item${state.activeSection === 'workspaces' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.folder}</span><span>${t('common.workspaces')}</span></button>
+          <button data-action="select-section" data-section="marketplace" class="nav-item${state.activeSection === 'marketplace' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.search}</span><span>${t('common.marketplace')}</span></button>
+          <button data-action="select-section" data-section="doctor" class="nav-item${state.activeSection === 'doctor' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.warning}</span><span>${t('common.doctor')}</span></button>
+          <button data-action="select-section" data-section="settings" class="nav-item${state.activeSection === 'settings' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.dots}</span><span>${t('common.settingsTitle')}</span></button>
         </nav>
 
         ${renderSidebarWorkspace()}
 
         <div class="sidebar-footer">
-          <button data-action="open-workspace" class="button secondary sidebar-button"><span class="button-icon">${icon.folder}</span><span>Open Workspace Folder</span></button>
+          <button data-action="open-workspace" class="button secondary sidebar-button"><span class="button-icon">${icon.folder}</span><span>${t('common.openWorkspaceFolder')}</span></button>
           <div class="sidebar-footer-row">
             <div class="theme-toggle-shell" aria-hidden="true">
               <span class="theme-toggle-icon">${state.theme === 'light' ? icon.sun : icon.moon}</span>

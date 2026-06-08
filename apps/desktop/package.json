@@ -17,7 +17,8 @@
     "@mcpspace/core": "file:../../packages/core",
     "@mcpspace/reconciler": "file:../../packages/reconciler",
     "@mcpspace/shared": "file:../../packages/shared",
-    "@mcpspace/workspace": "file:../../packages/workspace"
+    "@mcpspace/workspace": "file:../../packages/workspace",
+    "pretendard": "^1.3.9"
   },
   "devDependencies": {
     "electron": "42.3.1",
