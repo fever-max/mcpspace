@@ -155,16 +155,60 @@
   - 루트 `package.json`에 `desktop:package` 스크립트 추가
   - `apps/desktop/dist/` `.gitignore`에 추가
 
-### 한글화
+### 사이드바 메뉴 정리
 
-- [ ] Desktop UI 한/영 전환 지원
-  - `apps/desktop/src/renderer/src/i18n.ts` 파일 생성
-  - `en` / `ko` 두 언어 객체 정의, 모든 UI 텍스트 키 포함
-  - `t(key)` 함수로 현재 언어 텍스트 반환
-  - 현재 언어는 `state.lang: 'en' | 'ko'`로 관리, `localStorage`에 저장
-  - 기본 언어: `'en'`
-  - 사이드바 하단에 언어 토글 버튼 추가 (테마 토글 옆)
-  - `render()` 시 모든 UI 텍스트를 `t(key)` 로 교체
+- [ ] Changes 메뉴 제거 (Ready State의 Changes to Apply와 중복)
+- [ ] Marketplace 클릭 시 "Coming Soon" 카드 표시
+- [ ] Doctor 클릭 시 Doctor 화면 표시
+- [ ] Settings 클릭 시 설정 화면 표시
+- [ ] `state.activeSection`으로 활성 메뉴 관리, 메인 영역 분기 렌더링
+
+### Settings 화면
+
+Settings 화면은 4개 섹션으로 구성한다. 설정값은 모두 `localStorage`에 저장한다.
+
+**General (일반)**
+- [x] Confirm before syncing changes — 변경 사항 동기화 전 확인 (기본값: on)
+- [x] Auto backup before applying changes — 변경 적용 전 자동 백업 (기본값: on)
+
+**Appearance (외관)**
+- [x] Theme — System / Light / Dark 세그먼트 버튼 (기본값: System)
+- [x] Language — English / 한국어 세그먼트 버튼 (기본값: English)
+  - `apps/desktop/src/renderer/src/i18n.ts` 생성
+  - `en` / `ko` 언어 객체 정의, `t(key)` 함수로 텍스트 반환
+  - `state.lang: 'en' | 'ko'` 로 관리
+
+**Workspace (워크스페이스)**
+- [x] Auto open last workspace on startup — 시작 시 마지막 workspace 자동 열기 (기본값: on)
+
+**About (정보)**
+- [x] 앱 버전, 저작권 표시
+- [x] View Release Notes 버튼 (GitHub Releases 링크)
+
+### Doctor 화면
+
+Doctor 화면은 workspace 상태 진단을 제공한다. `workspace:doctor` IPC 채널로 결과를 받는다.
+
+**상단 헬스 카드**
+- [ ] Overall Status (Healthy / Warning / Error), Last Checked, Workspace 이름 표시
+- [ ] Run Checks 버튼
+
+**체크 카드 3개**
+- [ ] Config Path Check — `.mcpspace/config.yaml` 존재 여부
+- [ ] Desired State Validation — config 로드 + zod 스키마 검증
+- [ ] Sync Status — `outOfSyncCount` 기반 In Sync / Out of Sync 표시
+
+**Adapter Detection**
+- [ ] 각 client(Codex, Claude Code, Cursor, Claude Desktop) adapter `detect()` 결과 표시
+- [ ] 클라이언트별 상태: Healthy / Warning / Not Detected, 연결된 툴 수
+
+**Warnings**
+- [ ] 위 체크 결과에서 문제 항목만 목록으로 표시
+
+**IPC**
+- [ ] `workspace:doctor` 채널 구현 — 위 체크 결과를 한 번에 반환
+  - `workspace-session.ts` → config 검증 + adapter detect + status 조합
+  - response: `{ overall, configCheck, validationCheck, syncCheck, adapters, warnings }`
 
 ### polish
 

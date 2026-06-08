@@ -1,9 +1,11 @@
 import './styles/app.css'
 import brandLogoUrl from './assets/logo.png?url'
+import { initLanguage, setLanguage, t, type Lang } from './i18n.js'
 
 import type { ClientId, ClientStatusDto, SyncPlanDto, WorkspaceContextDto, WorkspaceStatusDto } from '../../shared/dtos.js'
 
 type ViewState = {
+  activeSection: 'workspaces' | 'marketplace' | 'doctor' | 'settings'
   workspace: WorkspaceContextDto | null
   status: WorkspaceStatusDto | null
   plan: SyncPlanDto | null
@@ -23,16 +25,100 @@ type ViewState = {
   assignedClientsToolName: string | null
   selectedClient: ClientId | null
   draftAssignments: Record<ClientId, string[]>
+  themeMode: 'system' | 'light' | 'dark'
   theme: 'light' | 'dark'
+  lang: Lang
+  autoOpenLastWorkspace: boolean
+  confirmBeforeSync: boolean
+  autoBackupBeforeApply: boolean
+  syncConfirmOpen: boolean
+  syncConfirmClient: ClientId | null
 }
 
+type AppSettings = {
+  themeMode: 'system' | 'light' | 'dark'
+  lang: Lang
+  autoOpenLastWorkspace: boolean
+  confirmBeforeSync: boolean
+  autoBackupBeforeApply: boolean
+}
+
+const SETTINGS_STORAGE_KEY = 'mcpspace.settings'
 const root = document.querySelector<HTMLDivElement>('#app')
 
 if (!root) {
   throw new Error('App root not found')
 }
 
+const readSettings = (): AppSettings => {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (!raw) {
+      return {
+        themeMode: 'system',
+        lang: initLanguage(),
+        autoOpenLastWorkspace: true,
+        confirmBeforeSync: true,
+        autoBackupBeforeApply: true,
+      }
+    }
+
+    const parsed = JSON.parse(raw) as Partial<AppSettings>
+    const lang: Lang = parsed.lang === 'ko' ? 'ko' : 'en'
+    return {
+      themeMode: parsed.themeMode === 'light' || parsed.themeMode === 'dark' ? parsed.themeMode : 'system',
+      lang,
+      autoOpenLastWorkspace: parsed.autoOpenLastWorkspace !== false,
+      confirmBeforeSync: parsed.confirmBeforeSync !== false,
+      autoBackupBeforeApply: parsed.autoBackupBeforeApply !== false,
+    }
+  } catch {
+    return {
+      themeMode: 'system',
+      lang: initLanguage(),
+      autoOpenLastWorkspace: true,
+      confirmBeforeSync: true,
+      autoBackupBeforeApply: true,
+    }
+  }
+}
+
+const persistSettings = (): void => {
+  localStorage.setItem(
+    SETTINGS_STORAGE_KEY,
+    JSON.stringify({
+      themeMode: state.themeMode,
+      lang: state.lang,
+      autoOpenLastWorkspace: state.autoOpenLastWorkspace,
+      confirmBeforeSync: state.confirmBeforeSync,
+      autoBackupBeforeApply: state.autoBackupBeforeApply,
+    } satisfies AppSettings),
+  )
+  setLanguage(state.lang)
+}
+
+const initialSettings = readSettings()
+
+setLanguage(initialSettings.lang)
+
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+
+  return 'light'
+}
+
+const resolveTheme = (themeMode: ViewState['themeMode']): 'light' | 'dark' => {
+  if (themeMode === 'system') {
+    return getSystemTheme()
+  }
+
+  return themeMode
+}
+
 const state: ViewState = {
+  activeSection: 'workspaces',
   workspace: null,
   status: null,
   plan: null,
@@ -57,8 +143,30 @@ const state: ViewState = {
     codex: [],
     cursor: [],
   },
-  theme: 'light',
+  themeMode: initialSettings.themeMode,
+  theme: resolveTheme(initialSettings.themeMode),
+  lang: initialSettings.lang,
+  autoOpenLastWorkspace: initialSettings.autoOpenLastWorkspace,
+  confirmBeforeSync: initialSettings.confirmBeforeSync,
+  autoBackupBeforeApply: initialSettings.autoBackupBeforeApply,
+  syncConfirmOpen: false,
+  syncConfirmClient: null,
 }
+
+const applyThemeMode = (themeMode: ViewState['themeMode']): void => {
+  state.themeMode = themeMode
+  state.theme = resolveTheme(themeMode)
+  persistSettings()
+}
+
+const themeMediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)')
+
+themeMediaQuery?.addEventListener('change', () => {
+  if (state.themeMode === 'system') {
+    state.theme = resolveTheme('system')
+    render()
+  }
+})
 
 let planRequestId = 0
 
@@ -123,6 +231,7 @@ const icon = {
   sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1Zm0 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm8-5a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1ZM6 12a1 1 0 0 1-1 1H4a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm10.95-5.95a1 1 0 0 1 1.41 0l.7.7a1 1 0 1 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41ZM6.34 17.66a1 1 0 0 1 1.41 0l.7.7a1 1 0 0 1-1.41 1.41l-.7-.7a1 1 0 0 1 0-1.41Zm11.72 1.41a1 1 0 0 1 0-1.41l.7-.7a1 1 0 1 1 1.41 1.41l-.7.7a1 1 0 0 1-1.41 0ZM6.34 6.34a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.41 1.41l-.7.7a1 1 0 0 1-1.41 0Z" fill="currentColor"/></svg>',
   moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.2A8.8 8.8 0 1 1 11.8 3a7 7 0 0 0 9.2 9.2Z" fill="currentColor"/></svg>',
   book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h10A2.5 2.5 0 0 1 20 4.5v15A2.5 2.5 0 0 1 17.5 22H7a3 3 0 0 1-3-3V4.5Zm2.5-.5A.5.5 0 0 0 7 4.5V19a1 1 0 0 0 1 1h9.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5h-10Z" fill="currentColor"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   warning: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.25 4.56a1 1 0 0 1 1.5 0l8.08 11.73A1 1 0 0 1 20.01 18H3.99a1 1 0 0 1-.83-1.71L11.25 4.56ZM12 9a1 1 0 0 0-1 1v3.5a1 1 0 1 0 2 0V10a1 1 0 0 0-1-1Zm0 8.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z" fill="currentColor"/></svg>',
 }
 
@@ -203,7 +312,7 @@ const getPreferredClientSelection = (clients: ClientStatusDto[]): ClientId | nul
     }
   }
 
-  return clients[0]?.clientName ?? null
+  return null
 }
 
 const getActualAssignmentsForClient = (status: WorkspaceStatusDto | null, client: ClientId): string[] => {
@@ -302,6 +411,21 @@ const syncSelectedClient = async (client: ClientId | null = getSelectedClient())
   render()
 }
 
+const requestSyncSelectedClient = (client: ClientId | null = getSelectedClient()): void => {
+  if (!client) {
+    return
+  }
+
+  if (state.confirmBeforeSync) {
+    state.syncConfirmOpen = true
+    state.syncConfirmClient = client
+    render()
+    return
+  }
+
+  void syncSelectedClient(client)
+}
+
 const refreshWorkspaceView = async (): Promise<void> => {
   state.loading = true
   state.error = null
@@ -355,6 +479,29 @@ const getClientStatusClass = (client: ClientStatusDto): string => {
   }
 
   return client.outOfSync ? 'pill pill-warning' : 'pill pill-success'
+}
+
+const getFixedClientStatus = (clientName: ClientId): ClientStatusDto | null => {
+  const status = state.status?.clients.find((client) => client.clientName === clientName)
+  return status ?? null
+}
+
+const getClientRowStatusLabel = (clientName: ClientId): string => {
+  const client = getFixedClientStatus(clientName)
+  if (!client) {
+    return 'Not Configured'
+  }
+
+  return getClientStatusLabel(client)
+}
+
+const getClientRowStatusClass = (clientName: ClientId): string => {
+  const client = getFixedClientStatus(clientName)
+  if (!client) {
+    return 'pill pill-neutral'
+  }
+
+  return getClientStatusClass(client)
 }
 
 const toggleSelectedClientTool = async (toolName: string): Promise<void> => {
@@ -782,6 +929,123 @@ const renderNotInitializedState = (): string => {
   `
 }
 
+const renderComingSoonSection = (title: string, description: string): string => `
+  <section class="card panel coming-soon-card">
+    <div class="coming-soon-icon" aria-hidden="true">${icon.sparkles}</div>
+    <h2>${title}</h2>
+    <p class="muted">${description}</p>
+  </section>
+`
+
+const renderSettingsSection = (): string => `
+  <div class="settings-stack">
+    <section class="card panel settings-panel">
+      <div class="panel-header">
+        <h2>${t('settings.section.general')}</h2>
+      </div>
+
+      <div class="settings-list">
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.general.confirm.title')}</div>
+            <div class="settings-description">${t('settings.general.confirm.description')}</div>
+          </div>
+          <button data-action="toggle-setting" data-setting="confirmBeforeSync" class="setting-toggle" type="button" aria-label="${t('settings.general.confirm.title')}">
+            <span class="setting-toggle-track">
+              <span class="setting-toggle-thumb${state.confirmBeforeSync ? ' on' : ''}"></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.general.backup.title')}</div>
+            <div class="settings-description">${t('settings.general.backup.description')}</div>
+          </div>
+          <button data-action="toggle-setting" data-setting="autoBackupBeforeApply" class="setting-toggle" type="button" aria-label="${t('settings.general.backup.title')}">
+            <span class="setting-toggle-track">
+              <span class="setting-toggle-thumb${state.autoBackupBeforeApply ? ' on' : ''}"></span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel settings-panel">
+      <div class="panel-header">
+        <h2>${t('settings.section.appearance')}</h2>
+      </div>
+
+      <div class="settings-list">
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.appearance.theme.title')}</div>
+            <div class="settings-description">${t('settings.appearance.theme.description')}</div>
+          </div>
+          <div class="settings-segment settings-segment-theme" role="group" aria-label="${t('settings.appearance.theme.title')}">
+            <button data-action="set-theme-mode" data-theme-mode="system" class="settings-segment-button${state.themeMode === 'system' ? ' active' : ''}" type="button">${t('settings.appearance.theme.system')}</button>
+            <button data-action="set-theme-mode" data-theme-mode="light" class="settings-segment-button${state.themeMode === 'light' ? ' active' : ''}" type="button">${t('settings.appearance.theme.light')}</button>
+            <button data-action="set-theme-mode" data-theme-mode="dark" class="settings-segment-button${state.themeMode === 'dark' ? ' active' : ''}" type="button">${t('settings.appearance.theme.dark')}</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.language.title')}</div>
+            <div class="settings-description">${t('settings.language.description')}</div>
+          </div>
+          <label class="settings-select" aria-label="${t('settings.language.title')}">
+            <select data-action="set-language-select" class="settings-select-control">
+              <option value="en" ${state.lang === 'en' ? 'selected' : ''}>${t('settings.language.english')}</option>
+              <option value="ko" ${state.lang === 'ko' ? 'selected' : ''}>${t('settings.language.korean')}</option>
+            </select>
+            <span class="settings-select-chevron" aria-hidden="true">${icon.chevron}</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel settings-panel">
+      <div class="panel-header">
+        <h2>${t('settings.section.workspace')}</h2>
+      </div>
+
+      <div class="settings-list">
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.autoOpen.title')}</div>
+            <div class="settings-description">${t('settings.autoOpen.description')}</div>
+          </div>
+          <button data-action="toggle-setting" data-setting="autoOpenLastWorkspace" class="setting-toggle" type="button" aria-label="${t('settings.autoOpen.title')}">
+            <span class="setting-toggle-track">
+              <span class="setting-toggle-thumb${state.autoOpenLastWorkspace ? ' on' : ''}"></span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel settings-panel">
+      <div class="panel-header">
+        <h2>${t('settings.section.about')}</h2>
+      </div>
+
+      <div class="settings-list settings-about-list">
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">${t('settings.about.version')}</div>
+            <div class="settings-description">v0.1.0</div>
+          </div>
+          <a class="button secondary settings-link-button settings-link-button-compact" href="https://github.com/fever-max/mcpspace/releases" target="_blank" rel="noreferrer noopener">
+            <span class="button-icon">${icon.open}</span>
+            <span>${t('settings.about.releaseNotes')}</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+`
+
 const renderReadyState = (): string => {
   const status = state.status
   const workspace = state.workspace
@@ -790,7 +1054,7 @@ const renderReadyState = (): string => {
     return ''
   }
 
-  const clients = [...(status?.clients ?? [])].sort((left, right) => clientOrder.indexOf(left.clientName) - clientOrder.indexOf(right.clientName))
+  const clients = clientOrder
   const tools = status?.tools ?? []
   const selectedClient = getSelectedClient()
   const selectedClientLabel = selectedClient ? getClientDisplayName(selectedClient) : 'Select an AI client'
@@ -847,37 +1111,35 @@ const renderReadyState = (): string => {
       <section class="ready-grid">
         <section class="card panel">
           <div class="panel-header">
-            <h2>AI Clients</h2>
-            <p class="muted">Select an AI client to manage its MCP tools.</p>
-          </div>
-          <div class="client-list">
-            ${
-              clients.length === 0
-                ? '<div class="list-empty">No client status yet.</div>'
-                : clients
-                    .map(
-                      (client) => `
-                        <button
-                          type="button"
-                          class="client-row client-row-button${selectedClient === client.clientName ? ' selected' : ''}"
-                          data-action="select-client"
-                          data-client="${client.clientName}"
-                        >
-                          <span class="client-row-main">
-                            <span class="client-avatar client-avatar-${client.clientName}">${getClientAvatarLabel(client.clientName)}</span>
-                            <span class="client-copy">
-                              <span class="client-name">${getClientDisplayName(client.clientName)}</span>
-                            </span>
-                          </span>
-                          <span class="client-row-side">
-                            <span class="${getClientStatusClass(client)}">${getClientStatusLabel(client)}</span>
-                            <span class="client-chevron" aria-hidden="true">›</span>
-                          </span>
-                        </button>
-                      `,
-                    )
-                    .join('')
-            }
+          <h2>AI Clients</h2>
+          <p class="muted">Select an AI client to manage its MCP tools.</p>
+        </div>
+        <div class="client-list">
+          ${
+            clients
+              .map(
+                (client) => `
+                  <button
+                    type="button"
+                    class="client-row client-row-button${selectedClient === client ? ' selected' : ''}"
+                    data-action="select-client"
+                    data-client="${client}"
+                  >
+                    <span class="client-row-main">
+                      <span class="client-avatar client-avatar-${client}">${getClientAvatarLabel(client)}</span>
+                      <span class="client-copy">
+                        <span class="client-name">${getClientDisplayName(client)}</span>
+                      </span>
+                    </span>
+                    <span class="client-row-side">
+                      <span class="${getClientRowStatusClass(client)}">${getClientRowStatusLabel(client)}</span>
+                      <span class="client-chevron" aria-hidden="true">›</span>
+                    </span>
+                  </button>
+                `,
+              )
+              .join('')
+          }
           </div>
           <div class="client-footnote">${selectedClient ? `1 of ${clients.length} selected` : 'Select an AI client to begin.'}</div>
         </section>
@@ -1013,6 +1275,18 @@ const renderReadyState = (): string => {
   `
 }
 const renderWorkspaceBody = (): string => {
+  if (state.activeSection === 'marketplace') {
+    return renderComingSoonSection('Marketplace', 'Marketplace is coming soon.')
+  }
+
+  if (state.activeSection === 'doctor') {
+    return renderComingSoonSection('Doctor', 'Diagnostic tools are coming soon.')
+  }
+
+  if (state.activeSection === 'settings') {
+    return renderSettingsSection()
+  }
+
   if (!state.workspace) {
     return renderEmptyState()
   }
@@ -1047,10 +1321,36 @@ const renderInitConfirmModal = (): string => {
   `
 }
 
+const renderSyncConfirmModal = (): string => {
+  if (!state.syncConfirmOpen || !state.syncConfirmClient) {
+    return ''
+  }
+
+  const clientLabel = getClientDisplayName(state.syncConfirmClient)
+
+  return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="sync-confirm-modal-title">
+        <div class="modal-icon modal-icon-danger" aria-hidden="true">${icon.refresh}</div>
+        <div class="modal-body">
+          <h3 id="sync-confirm-modal-title">${t('sync.confirm.title')}</h3>
+          <p>${t('sync.confirm.description')}</p>
+          <p><strong>${clientLabel}</strong></p>
+        </div>
+        <div class="modal-actions">
+          <button data-action="cancel-sync-client" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
+          <button data-action="confirm-sync-client" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.refresh}</span><span>${t('sync.confirm.apply')}</span></button>
+        </div>
+      </section>
+    </div>
+  `
+}
+
 
 const bindActionHandlers = (): void => {
   document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace"]').forEach((button) => {
     button.addEventListener('click', async () => {
+      state.activeSection = 'workspaces'
       await openWorkspace()
     })
   })
@@ -1215,15 +1515,73 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="confirm-sync-client"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const client = state.syncConfirmClient
+      state.syncConfirmOpen = false
+      state.syncConfirmClient = null
+      render()
+      await syncSelectedClient(client)
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="cancel-sync-client"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.syncConfirmOpen = false
+      state.syncConfirmClient = null
+      render()
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-theme"]').forEach((button) => {
     button.addEventListener('click', () => {
-      state.theme = state.theme === 'light' ? 'dark' : 'light'
+      const nextThemeMode = state.theme === 'dark' ? 'light' : 'dark'
+      applyThemeMode(nextThemeMode)
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="set-theme-mode"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const themeMode = button.dataset.themeMode as ViewState['themeMode'] | undefined
+      if (!themeMode || state.themeMode === themeMode) {
+        return
+      }
+
+      applyThemeMode(themeMode)
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLSelectElement>('[data-action="set-language-select"]').forEach((select) => {
+    select.addEventListener('change', () => {
+      const lang = select.value as Lang | undefined
+      if (!lang || state.lang === lang) {
+        return
+      }
+
+      state.lang = lang
+      persistSettings()
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-setting"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const setting = button.dataset.setting as 'autoOpenLastWorkspace' | 'confirmBeforeSync' | 'autoBackupBeforeApply' | undefined
+      if (!setting) {
+        return
+      }
+
+      state[setting] = !state[setting]
+      persistSettings()
       render()
     })
   })
 
   document.querySelectorAll<HTMLButtonElement>('[data-action="select-client"]').forEach((button) => {
     button.addEventListener('click', () => {
+      state.activeSection = 'workspaces'
       const clientName = button.dataset.client as ClientId | undefined
       if (!clientName) {
         return
@@ -1254,7 +1612,7 @@ const bindActionHandlers = (): void => {
 
   document.querySelectorAll<HTMLButtonElement>('[data-action="sync-client"]').forEach((button) => {
     button.addEventListener('click', () => {
-      void syncSelectedClient()
+      requestSyncSelectedClient()
     })
   })
 
@@ -1263,11 +1621,48 @@ const bindActionHandlers = (): void => {
       void refreshWorkspaceView()
     })
   })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="select-section"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const section = button.dataset.section as ViewState['activeSection'] | undefined
+      if (!section) {
+        return
+      }
+
+      state.activeSection = section
+      render()
+    })
+  })
 }
 const render = (): void => {
   const selectedClient = getSelectedClient()
   const badgeLabel = getWorkspaceBadgeLabel(state.workspace, state.status)
   const badgeClass = getWorkspaceBadgeClass(state.workspace, state.status)
+  const sectionHeadings: Record<ViewState['activeSection'], { eyebrow: string; title: string; subtitle: string }> = {
+    workspaces: {
+      eyebrow: 'Workspace',
+      title: state.workspace ? state.workspace.name : 'No workspace connected',
+      subtitle: state.workspace ? state.workspace.path : 'Open a project folder to connect a workspace and start managing MCP tools for your AI clients.',
+    },
+    marketplace: {
+      eyebrow: '',
+      title: 'Marketplace',
+      subtitle: 'Marketplace is coming soon.',
+    },
+    doctor: {
+      eyebrow: '',
+      title: 'Doctor',
+      subtitle: 'Diagnostic tools are coming soon.',
+    },
+    settings: {
+      eyebrow: '',
+      title: 'Settings',
+      subtitle: 'Configure mcpspace to fit your workflow.',
+    },
+  }
+
+  const sectionHeading = sectionHeadings[state.activeSection]
+  const showWorkspaceBadge = state.activeSection === 'workspaces' && Boolean(badgeLabel)
 
   document.body.dataset.theme = state.theme
 
@@ -1276,11 +1671,10 @@ const render = (): void => {
       <aside class="sidebar">
         <div class="brand"><img class="brand-logo" src="${brandLogoUrl}" alt="" aria-hidden="true" /><span>mcpspace</span></div>
         <nav class="nav">
-          <button class="nav-item active" type="button"><span class="nav-icon">${icon.folder}</span><span>Workspaces</span></button>
-          <button class="nav-item" type="button"><span class="nav-icon">${icon.search}</span><span>Marketplace</span></button>
-          <button class="nav-item" type="button"><span class="nav-icon">${icon.refresh}</span><span>Changes</span></button>
-          <button class="nav-item" type="button"><span class="nav-icon">${icon.warning}</span><span>Doctor</span></button>
-          <button class="nav-item" type="button"><span class="nav-icon">${icon.dots}</span><span>Settings</span></button>
+          <button data-action="select-section" data-section="workspaces" class="nav-item${state.activeSection === 'workspaces' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.folder}</span><span>Workspaces</span></button>
+          <button data-action="select-section" data-section="marketplace" class="nav-item${state.activeSection === 'marketplace' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.search}</span><span>Marketplace</span></button>
+          <button data-action="select-section" data-section="doctor" class="nav-item${state.activeSection === 'doctor' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.warning}</span><span>Doctor</span></button>
+          <button data-action="select-section" data-section="settings" class="nav-item${state.activeSection === 'settings' ? ' active' : ''}" type="button"><span class="nav-icon">${icon.dots}</span><span>Settings</span></button>
         </nav>
 
         ${renderSidebarWorkspace()}
@@ -1288,10 +1682,12 @@ const render = (): void => {
         <div class="sidebar-footer">
           <button data-action="open-workspace" class="button secondary sidebar-button"><span class="button-icon">${icon.folder}</span><span>Open Workspace Folder</span></button>
           <div class="sidebar-footer-row">
-            <button data-action="toggle-theme" class="theme-toggle" type="button" aria-label="Toggle theme">
+            <div class="theme-toggle-shell" aria-hidden="true">
               <span class="theme-toggle-icon">${state.theme === 'light' ? icon.sun : icon.moon}</span>
-              <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-            </button>
+              <button data-action="toggle-theme" class="theme-toggle" type="button" aria-label="Toggle theme">
+                <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+              </button>
+            </div>
             <div class="sidebar-version">v0.1.0</div>
           </div>
         </div>
@@ -1300,17 +1696,23 @@ const render = (): void => {
       <main class="main">
         <header class="header">
           <div>
-            <div class="eyebrow">Workspace</div>
+            ${sectionHeading.eyebrow ? `<div class="eyebrow">${sectionHeading.eyebrow}</div>` : ''}
             <div class="header-title-row">
-              <h1>${state.workspace ? state.workspace.name : 'No workspace connected'}</h1>
-              ${badgeLabel ? `<span class="${badgeClass}">${badgeLabel}</span>` : ''}
+              <h1>${sectionHeading.title}</h1>
+              ${showWorkspaceBadge ? `<span class="${badgeClass}">${badgeLabel}</span>` : ''}
             </div>
-            <p class="subtitle">${state.workspace ? state.workspace.path : 'Open a project folder to connect a workspace and start managing MCP tools for your AI clients.'}</p>
+            <p class="subtitle">${sectionHeading.subtitle}</p>
           </div>
-          <div class="header-actions">
-            <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button" type="button" ${disabledAttr(state.loading)}><span class="button-icon">${icon.refresh}</span><span>Refresh</span></button>
-            <button class="button secondary" type="button" aria-label="More options" disabled><span class="button-icon">${icon.dots}</span></button>
-          </div>
+          ${
+            state.activeSection === 'workspaces'
+              ? `
+                <div class="header-actions">
+                  <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button" type="button" ${disabledAttr(state.loading)}><span class="button-icon">${icon.refresh}</span><span>Refresh</span></button>
+                  <button class="button secondary" type="button" aria-label="More options" disabled><span class="button-icon">${icon.dots}</span></button>
+                </div>
+              `
+              : ''
+          }
         </header>
 
         ${state.error ? `<section class="card error-card"><strong>Error:</strong> ${state.error}</section>` : ''}
@@ -1318,6 +1720,7 @@ const render = (): void => {
       </main>
     </div>
     ${renderInitConfirmModal()}
+    ${renderSyncConfirmModal()}
     ${renderAddToolModal()}
     ${renderRemoveToolModal()}
     ${renderAssignedClientsModal()}
@@ -1345,6 +1748,7 @@ const loadWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
   state.initConfirmOpen = false
+  state.activeSection = 'workspaces'
   render()
 
   const currentResult = await window.mcpspace.workspace.current()
@@ -1359,6 +1763,16 @@ const loadWorkspace = async (): Promise<void> => {
 
   state.workspace = currentResult.data
   rememberWorkspace(currentResult.data)
+
+  if (currentResult.data === null && state.autoOpenLastWorkspace) {
+    const recentWorkspace = readRecentWorkspaces()[0]
+    if (recentWorkspace) {
+      state.loading = false
+      render()
+      await openWorkspacePath(recentWorkspace.path)
+      return
+    }
+  }
 
   if (currentResult.data?.status === 'ready') {
     const statusResult = await window.mcpspace.workspace.status()
@@ -1381,6 +1795,7 @@ const openWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
   state.initConfirmOpen = false
+  state.activeSection = 'workspaces'
   render()
 
   const result = await window.mcpspace.workspace.open()
@@ -1425,6 +1840,7 @@ const openWorkspacePath = async (workspacePath: string): Promise<void> => {
   state.loading = true
   state.error = null
   state.initConfirmOpen = false
+  state.activeSection = 'workspaces'
   render()
 
   const result = await window.mcpspace.workspace.openPath(workspacePath)
@@ -1464,6 +1880,7 @@ const openWorkspacePath = async (workspacePath: string): Promise<void> => {
 const initializeWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
+  state.activeSection = 'workspaces'
   render()
 
   const result = await window.mcpspace.workspace.init()
