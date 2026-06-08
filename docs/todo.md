@@ -155,6 +155,11 @@
   - 루트 `package.json`에 `desktop:package` 스크립트 추가
   - `apps/desktop/dist/` `.gitignore`에 추가
 
+### 한글화
+
+- [ ] Desktop UI 텍스트 한/영 선택 지원 (설정에서 언어 변경)
+- [ ] 기본 언어: 영어, 한국어 지원
+
 ### polish
 
 - [ ] empty / not_initialized / ready 화면 최종 시각적 정리 (앱 실제 실행 후 개선점 목록화)
