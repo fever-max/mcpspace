@@ -157,8 +157,14 @@
 
 ### 한글화
 
-- [ ] Desktop UI 텍스트 한/영 선택 지원 (설정에서 언어 변경)
-- [ ] 기본 언어: 영어, 한국어 지원
+- [ ] Desktop UI 한/영 전환 지원
+  - `apps/desktop/src/renderer/src/i18n.ts` 파일 생성
+  - `en` / `ko` 두 언어 객체 정의, 모든 UI 텍스트 키 포함
+  - `t(key)` 함수로 현재 언어 텍스트 반환
+  - 현재 언어는 `state.lang: 'en' | 'ko'`로 관리, `localStorage`에 저장
+  - 기본 언어: `'en'`
+  - 사이드바 하단에 언어 토글 버튼 추가 (테마 토글 옆)
+  - `render()` 시 모든 UI 텍스트를 `t(key)` 로 교체
 
 ### polish
 
