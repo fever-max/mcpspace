@@ -31,6 +31,7 @@ import { MCP_CATALOG } from '@mcpspace/workspace'
 
 import {
   type ClientId,
+  type ClientStatusKind,
   type ClientStatusDto,
   type McpCatalogEntryDto,
   type McpCatalogListDto,
@@ -182,63 +183,90 @@ const mapMcpTools = (desiredState: McpspaceConfig): McpConfigDto[] => {
 
 const mapClientStatus = (
   status: Awaited<ReturnType<WorkspaceService['status']>>['clients'][number],
-): ClientStatusDto => ({
-  clientName: status.clientName as ClientId,
-  outOfSync: status.outOfSync,
-  error: status.error,
-  assignedMcpCount: status.desiredTools.length,
-})
+): ClientStatusDto => {
+  const statusKind: ClientStatusKind = status.outOfSync
+    ? 'out_of_sync'
+    : status.desiredTools.length === 0 && status.actualTools.length === 0
+      ? 'not_configured'
+      : 'in_sync'
+
+  return {
+    clientName: status.clientName as ClientId,
+    statusKind,
+    outOfSync: status.outOfSync,
+    error: status.error,
+    assignedMcpCount: status.desiredTools.length,
+  }
+}
 
 export class WorkspaceSession {
   private currentWorkspace: WorkspaceContextDto | null = null
   private runtime: WorkspaceRuntime | null = null
+  private mutationQueue: Promise<void> = Promise.resolve()
+
+  private runSerialized<T>(task: () => Promise<T>): Promise<T> {
+    const run = this.mutationQueue.then(task, task)
+    this.mutationQueue = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
 
   current(): WorkspaceContextDto | null {
     return this.currentWorkspace
   }
 
   async open(workspacePath: string): Promise<WorkspaceContextDto> {
-    const context = toWorkspaceContext(
-      workspacePath,
-      existsSync(resolve(workspacePath, '.mcpspace', 'config.yaml')) ? 'ready' : 'not_initialized',
-    )
+    return this.runSerialized(async () => {
+      const context = toWorkspaceContext(
+        workspacePath,
+        existsSync(resolve(workspacePath, '.mcpspace', 'config.yaml')) ? 'ready' : 'not_initialized',
+      )
 
-    this.currentWorkspace = context
-    this.runtime = context.status === 'ready' ? createWorkspaceRuntime(context.path) : null
-    return context
+      this.currentWorkspace = context
+      this.runtime = context.status === 'ready' ? createWorkspaceRuntime(context.path) : null
+      return context
+    })
   }
 
   async init(): Promise<WorkspaceContextDto> {
-    if (!this.currentWorkspace) {
-      throw new Error('No workspace selected.')
-    }
+    return this.runSerialized(async () => {
+      if (!this.currentWorkspace) {
+        throw new Error('No workspace selected.')
+      }
 
-    if (this.currentWorkspace.status === 'ready') {
-      throw new Error(`Workspace is already initialized: ${this.currentWorkspace.configPath}`)
-    }
+      if (this.currentWorkspace.status === 'ready') {
+        throw new Error(`Workspace is already initialized: ${this.currentWorkspace.configPath}`)
+      }
 
-    const runtime = createWorkspaceRuntime(this.currentWorkspace.path)
-    await runtime.desiredStateRepository.save(createDefaultConfig())
+      const runtime = createWorkspaceRuntime(this.currentWorkspace.path)
+      await runtime.desiredStateRepository.save(createDefaultConfig())
 
-    const readyWorkspace = {
-      ...this.currentWorkspace,
-      status: 'ready' as const,
-      isOpen: true,
-    }
+      const readyWorkspace = {
+        ...this.currentWorkspace,
+        status: 'ready' as const,
+        isOpen: true,
+      }
 
-    this.currentWorkspace = readyWorkspace
-    this.runtime = createWorkspaceRuntime(readyWorkspace.path)
-    return readyWorkspace
+      this.currentWorkspace = readyWorkspace
+      this.runtime = runtime
+      return readyWorkspace
+    })
   }
 
   async attach(toolName: string, clientName: string): Promise<SyncPlan> {
-    this.ensureReadyWorkspace()
-    return this.ensureRuntime().workspaceService.attach(toolName, clientName)
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      return this.ensureRuntime().workspaceService.attach(toolName, clientName)
+    })
   }
 
   async detach(toolName: string, clientName: string): Promise<SyncPlan> {
-    this.ensureReadyWorkspace()
-    return this.ensureRuntime().workspaceService.detach(toolName, clientName)
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      return this.ensureRuntime().workspaceService.detach(toolName, clientName)
+    })
   }
 
   async plan(clientName: string): Promise<SyncPlan> {
@@ -247,14 +275,18 @@ export class WorkspaceSession {
   }
 
   async sync(clientName: string, options: { backup?: boolean } = {}): Promise<SyncPlan> {
-    this.ensureReadyWorkspace()
-    return this.ensureRuntime().workspaceService.sync(clientName, options)
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      return this.ensureRuntime().workspaceService.sync(clientName, options)
+    })
   }
 
   async addMcp(toolName: string, options?: { command?: string; args?: string[]; env?: Record<string, string>; package?: string }): Promise<WorkspaceStatusDto> {
-    this.ensureReadyWorkspace()
-    await this.ensureRuntime().mcpRegistryService.add(toolName, options)
-    return this.status()
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      await this.ensureRuntime().mcpRegistryService.add(toolName, options)
+      return this.status()
+    })
   }
 
   async updateMcp(
@@ -262,15 +294,19 @@ export class WorkspaceSession {
     nextToolName: string,
     options?: { command?: string; args?: string[]; env?: Record<string, string>; package?: string },
   ): Promise<WorkspaceStatusDto> {
-    this.ensureReadyWorkspace()
-    await this.ensureRuntime().mcpRegistryService.update(toolName, nextToolName, options)
-    return this.status()
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      await this.ensureRuntime().mcpRegistryService.update(toolName, nextToolName, options)
+      return this.status()
+    })
   }
 
   async removeMcp(toolName: string): Promise<WorkspaceStatusDto> {
-    this.ensureReadyWorkspace()
-    await this.ensureRuntime().mcpRegistryService.remove(toolName)
-    return this.status()
+    return this.runSerialized(async () => {
+      this.ensureReadyWorkspace()
+      await this.ensureRuntime().mcpRegistryService.remove(toolName)
+      return this.status()
+    })
   }
 
   async status(): Promise<WorkspaceStatusDto> {
@@ -281,6 +317,7 @@ export class WorkspaceSession {
         tools: [],
         outOfSyncCount: 0,
         inSyncCount: 0,
+        notConfiguredCount: 0,
       }
     }
 
@@ -291,20 +328,24 @@ export class WorkspaceSession {
         tools: [],
         outOfSyncCount: 0,
         inSyncCount: 0,
+        notConfiguredCount: 0,
       }
     }
 
     const runtime = this.ensureRuntime()
     const workspaceStatus = await runtime.workspaceService.status()
     const clients = workspaceStatus.clients.map(mapClientStatus)
-    const outOfSyncCount = clients.filter((client) => client.outOfSync).length
+    const outOfSyncCount = clients.filter((client) => client.statusKind === 'out_of_sync').length
+    const inSyncCount = clients.filter((client) => client.statusKind === 'in_sync').length
+    const notConfiguredCount = clients.filter((client) => client.statusKind === 'not_configured').length
 
     return {
       workspace: this.currentWorkspace,
       clients,
       tools: mapMcpTools(workspaceStatus.desiredState),
       outOfSyncCount,
-      inSyncCount: clients.length - outOfSyncCount,
+      inSyncCount,
+      notConfiguredCount,
     }
   }
 

@@ -121,9 +121,9 @@ export class DefaultMcpRegistryService implements McpRegistryService {
     if (catalogEntry) {
       return {
         package: options.package ?? catalogEntry.package,
-        command: catalogEntry.command,
-        args: [...catalogEntry.args],
-        env: { ...catalogEntry.env },
+        command: options.command ?? catalogEntry.command,
+        args: options.args ? [...options.args] : [...catalogEntry.args],
+        env: options.env ? { ...options.env } : { ...catalogEntry.env },
       }
     }
 

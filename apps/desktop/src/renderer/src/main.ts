@@ -48,6 +48,7 @@ type ViewState = {
   syncConfirmOpen: boolean
   syncConfirmClient: ClientId | null
   reviewLoading: boolean
+  workspaceMenuOpenPath: string | null
 }
 
 type AppSettings = {
@@ -173,6 +174,7 @@ const state: ViewState = {
   syncConfirmOpen: false,
   syncConfirmClient: null,
   reviewLoading: false,
+  workspaceMenuOpenPath: null,
 }
 
 const applyThemeMode = (themeMode: ViewState['themeMode']): void => {
@@ -440,6 +442,7 @@ const refreshSelectedClientPlan = async (
 
   if (!result.ok) {
     state.error = result.error.message
+    state.plan = null
     render()
     return
   }
@@ -553,19 +556,19 @@ const refreshWorkspaceView = async (): Promise<void> => {
 }
 
 const getClientStatusLabel = (client: ClientStatusDto): string => {
-  if (client.assignedMcpCount === 0) {
+  if (client.statusKind === 'not_configured') {
     return t('common.notConfigured')
   }
 
-  return client.outOfSync ? t('common.outOfSync') : t('common.inSync')
+  return client.statusKind === 'out_of_sync' ? t('common.outOfSync') : t('common.inSync')
 }
 
 const getClientStatusClass = (client: ClientStatusDto): string => {
-  if (client.assignedMcpCount === 0) {
+  if (client.statusKind === 'not_configured') {
     return 'pill pill-neutral'
   }
 
-  return client.outOfSync ? 'pill pill-warning' : 'pill pill-success'
+  return client.statusKind === 'out_of_sync' ? 'pill pill-warning' : 'pill pill-success'
 }
 
 const getFixedClientStatus = (clientName: ClientId): ClientStatusDto | null => {
@@ -784,9 +787,9 @@ const saveTool = async (
   toolPackage: string,
   mode: 'add' | 'edit' | null,
   originalName: string | null,
-): Promise<void> => {
+): Promise<boolean> => {
   if (!toolName || !command) {
-    return
+    return false
   }
 
   state.loading = true
@@ -809,7 +812,7 @@ const saveTool = async (
     state.error = result.error.message
     state.loading = false
     render()
-    return
+    return false
   }
 
   const statusResult = await window.mcpspace.workspace.status()
@@ -823,6 +826,7 @@ const saveTool = async (
 
   state.loading = false
   render()
+  return true
 }
 
 const openRemoveToolModal = (toolName: string): void => {
@@ -1123,18 +1127,34 @@ const renderSidebarWorkspace = (): string => {
       ${workspaceItems
         .map(
           (workspace) => `
-            <button
-              class="sidebar-workspace-item${state.workspace?.path === workspace.path ? ' active' : ''}"
-              type="button"
-              data-action="open-workspace-path"
-              data-path="${workspace.path}"
-            >
-              <span class="sidebar-workspace-icon">${icon.folder}</span>
-              <span class="sidebar-workspace-meta">
-                <span class="sidebar-workspace-name">${workspace.name}</span>
-                <span class="sidebar-workspace-path">${workspace.path}</span>
-              </span>
-            </button>
+            <div class="sidebar-workspace-row">
+              <button
+                class="sidebar-workspace-item${state.workspace?.path === workspace.path ? ' active' : ''}"
+                type="button"
+                data-action="open-workspace-path"
+                data-path="${workspace.path}"
+              >
+                <span class="sidebar-workspace-icon">${icon.folder}</span>
+                <span class="sidebar-workspace-meta">
+                  <span class="sidebar-workspace-name">${workspace.name}</span>
+                  <span class="sidebar-workspace-path">${workspace.path}</span>
+                </span>
+              </button>
+              <div class="sidebar-workspace-menu">
+                <button
+                  class="sidebar-workspace-menu-trigger"
+                  type="button"
+                  data-action="toggle-workspace-menu"
+                  data-path="${workspace.path}"
+                  aria-label="More options"
+                >${icon.dots}</button>
+                ${state.workspaceMenuOpenPath === workspace.path ? `
+                  <div class="sidebar-workspace-dropdown">
+                    <button class="sidebar-workspace-dropdown-item danger" type="button" data-action="remove-workspace-from-list" data-path="${workspace.path}">${t('common.removeFromList')}</button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
           `,
         )
         .join('')}
@@ -1551,7 +1571,7 @@ const renderReadyState = (): string => {
         </div>
       </section>
       <section class="status-summary">
-        <span class="muted">${status?.inSyncCount ?? 0} in sync, ${status?.outOfSyncCount ?? 0} out of sync</span>
+        <span class="muted">${status?.inSyncCount ?? 0} ${t('common.inSync').toLowerCase()}, ${status?.outOfSyncCount ?? 0} ${t('common.outOfSync').toLowerCase()}, ${status?.notConfiguredCount ?? 0} ${t('common.notConfigured').toLowerCase()}</span>
       </section>
     </div>
   `
@@ -1684,6 +1704,35 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-workspace-menu"]').forEach((button) => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const path = button.dataset.path
+      if (!path) return
+      state.workspaceMenuOpenPath = state.workspaceMenuOpenPath === path ? null : path
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="remove-workspace-from-list"]').forEach((button) => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const path = button.dataset.path
+      if (!path) return
+      const updated = readRecentWorkspaces().filter((w) => w.path !== path)
+      writeRecentWorkspaces(updated)
+      if (state.workspace?.path === path) {
+        state.workspace = null
+        state.status = null
+        state.plan = null
+        state.selectedClient = null
+        state.draftAssignments = clearDraftAssignments()
+      }
+      state.workspaceMenuOpenPath = null
+      render()
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="copy-project-path"]').forEach((button) => {
     button.addEventListener('click', async () => {
       await copyCurrentProjectPath()
@@ -1769,16 +1818,25 @@ const bindActionHandlers = (): void => {
       const selectedCatalogTools = getSelectedCatalogTools()
       const catalogMode = state.addToolModalTab === 'catalog' && mode === 'add'
 
-      closeAddToolModal()
-
       if (catalogMode) {
+        let allSucceeded = true
         for (const tool of selectedCatalogTools) {
-          await saveTool(tool.toolName, tool.command, tool.args, tool.package, 'add', null)
+          const success = await saveTool(tool.toolName, tool.command, tool.args, tool.package, 'add', null)
+          if (!success) {
+            allSucceeded = false
+            break
+          }
+        }
+        if (allSucceeded) {
+          closeAddToolModal()
         }
         return
       }
 
-      await saveTool(toolName, command, args, toolPackage, mode, originalName)
+      const success = await saveTool(toolName, command, args, toolPackage, mode, originalName)
+      if (success) {
+        closeAddToolModal()
+      }
     })
   })
 
@@ -2306,5 +2364,24 @@ const initializeWorkspace = async (): Promise<void> => {
   state.initConfirmOpen = false
   render()
 }
+
+document.addEventListener('click', (event) => {
+  const target = event.target as HTMLElement | null
+  let changed = false
+
+  if (state.workspaceMenuOpenPath !== null && !target?.closest('.sidebar-workspace-menu')) {
+    state.workspaceMenuOpenPath = null
+    changed = true
+  }
+
+  if (state.languageMenuOpen && !target?.closest('.settings-select-menu')) {
+    state.languageMenuOpen = false
+    changed = true
+  }
+
+  if (changed) {
+    render()
+  }
+})
 
 void loadWorkspace()

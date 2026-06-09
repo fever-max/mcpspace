@@ -78,14 +78,7 @@ const buildSummary = (actions: PlanAction[]): SyncPlanSummary => {
 export class DefaultReconciler implements Reconciler, Planner {
   plan(desired: DesiredState, actual: ActualState): SyncPlan {
     const clientName = actual.clientName
-    const desiredClient = desired.clients[clientName]
-
-    if (!desiredClient) {
-      throw new ReconcileError(
-        'CLIENT_NOT_FOUND',
-        `Desired state does not contain client '${clientName}'.`,
-      )
-    }
+    const desiredClient = desired.clients[clientName] ?? { mcps: [] }
 
     const desiredAssigned = new Set(desiredClient.mcps)
 

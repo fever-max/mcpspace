@@ -28,8 +28,11 @@ export type IpcFailure<Code extends string = string> = {
 
 export type IpcResult<T, Code extends string = string> = IpcSuccess<T> | IpcFailure<Code>
 
+export type ClientStatusKind = 'in_sync' | 'out_of_sync' | 'not_configured'
+
 export type ClientStatusDto = {
   clientName: ClientId
+  statusKind: ClientStatusKind
   outOfSync: boolean
   error?: string
   assignedMcpCount: number
@@ -96,4 +99,5 @@ export type WorkspaceStatusDto = {
   tools: McpConfigDto[]
   outOfSyncCount: number
   inSyncCount: number
+  notConfiguredCount: number
 }

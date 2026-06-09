@@ -45,8 +45,7 @@ export class FileConfigLoader implements ConfigLoader {
       }
     }
 
-    const raw = await this.readYamlFile(sources.projectConfigPath)
-    return McpspaceConfigSchema.parse(raw)
+    throw new Error(`Project config not found: ${sources.projectConfigPath}`)
   }
 
   async loadGlobalConfig(): Promise<GlobalConfig> {

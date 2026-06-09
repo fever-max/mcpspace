@@ -1,6 +1,6 @@
 import type { AdapterFactory } from '@mcpspace/adapters'
 import type { ConfigLoader, McpspaceConfig, StateRepository } from '@mcpspace/core'
-import type { ActualState } from '@mcpspace/shared'
+import { SUPPORTED_CLIENTS, type ActualState } from '@mcpspace/shared'
 import type { Reconciler, SyncPlan } from '@mcpspace/reconciler'
 
 import type {
@@ -110,7 +110,7 @@ export class DefaultWorkspaceService implements WorkspaceService {
     const desired = await this.configLoader.loadProjectConfig()
     const state = await this.stateRepository.load()
 
-    const clientNames = new Set<string>(Object.keys(desired.clients))
+    const clientNames = new Set<string>(SUPPORTED_CLIENTS)
 
     const clients: ClientStatusView[] = []
 
@@ -175,4 +175,3 @@ export class DefaultWorkspaceService implements WorkspaceService {
     return { detected: true, actual }
   }
 }
-

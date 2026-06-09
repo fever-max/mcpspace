@@ -49,7 +49,7 @@ button:disabled {
   padding: 20px 16px 16px;
   border-right: 1px solid #e5e7eb;
   background: rgba(255, 255, 255, 0.85);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .brand {
@@ -125,11 +125,83 @@ button:disabled {
   line-height: 1.45;
 }
 
+.sidebar-workspace-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-workspace-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sidebar-workspace-menu-trigger {
+  border: 0;
+  background: transparent;
+  padding: 4px 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.sidebar-workspace-menu-trigger:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.sidebar-workspace-menu-trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sidebar-workspace-dropdown {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: -8px;
+  z-index: 30;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.sidebar-workspace-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #374151;
+}
+
+.sidebar-workspace-dropdown-item:hover {
+  background: #f4f7fb;
+}
+
+.sidebar-workspace-dropdown-item.danger {
+  color: #ef4444;
+}
+
+.sidebar-workspace-dropdown-item.danger:hover {
+  background: #fef2f2;
+}
+
 .sidebar-workspace-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   border: 0;
   border-radius: 12px;
   padding: 10px 12px;

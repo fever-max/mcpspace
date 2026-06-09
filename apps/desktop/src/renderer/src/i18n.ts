@@ -49,6 +49,7 @@ type I18nKey =
   | 'common.removeMcpToolQuestion'
   | 'common.removeMcpToolDescription'
   | 'common.close'
+  | 'common.removeFromList'
   | 'common.workspaceMcpTools'
   | 'common.manageWorkspaceMcpTools'
   | 'common.noMcpToolsRegistered'
@@ -184,6 +185,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.removeMcpToolQuestion': 'Remove MCP tool?',
     'common.removeMcpToolDescription': 'This will remove the tool from the workspace registry and it will no longer be available for AI client assignment.',
     'common.close': 'Close',
+    'common.removeFromList': 'Remove from list',
     'common.workspaceMcpTools': 'Workspace MCP Tools',
     'common.manageWorkspaceMcpTools': 'Manage the MCP tools registered in this workspace.',
     'common.noMcpToolsRegistered': 'No MCP tools registered.',
@@ -313,6 +315,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.removeMcpToolQuestion': 'MCP 도구를 제거할까요?',
     'common.removeMcpToolDescription': '이 도구를 작업 폴더의 레지스트리에서 제거합니다. 이후 AI 클라이언트에 할당할 수 없습니다.',
     'common.close': '닫기',
+    'common.removeFromList': '목록에서 제거',
     'common.workspaceMcpTools': 'MCP 도구',
     'common.manageWorkspaceMcpTools': '해당 작업 폴더에 등록된 MCP 도구를 관리합니다.',
     'common.noMcpToolsRegistered': '등록된 MCP 도구가 없습니다.',
