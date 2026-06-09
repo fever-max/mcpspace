@@ -250,9 +250,9 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.workspace.sync, async (_event, clientName: string): Promise<WorkspaceSyncResponse> => {
+  ipcMain.handle(IPC_CHANNELS.workspace.sync, async (_event, clientName: string, options: { backup?: boolean } = {}): Promise<WorkspaceSyncResponse> => {
     try {
-      const plan = await services.workspaceSession.sync(clientName)
+      const plan = await services.workspaceSession.sync(clientName, options)
       return ok(mapSyncPlan(plan))
     } catch (error) {
       return fail(toSyncError(error), error instanceof Error ? error.message : 'Unknown error')

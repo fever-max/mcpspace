@@ -15,7 +15,6 @@ import {
   type AdapterName,
   type ClientAdapter,
   ClaudeCodeAdapter,
-  ClaudeDesktopAdapter,
   CodexAdapter,
   CursorAdapter,
 } from '@mcpspace/adapters'
@@ -73,10 +72,6 @@ class LocalAdapterFactory implements AdapterFactory {
 
   get(client: string): ClientAdapter {
     const name = client as AdapterName
-    if (name === 'claude-desktop') {
-      return new ClaudeDesktopAdapter(this.pathResolver)
-    }
-
     if (name === 'claude-code') {
       return new ClaudeCodeAdapter(this.pathResolver)
     }
@@ -90,7 +85,7 @@ class LocalAdapterFactory implements AdapterFactory {
     }
 
     throw new Error(
-      `Unsupported client '${client}'. Use: claude-desktop, claude-code, codex, cursor`,
+      `Unsupported client '${client}'. Use: claude-code, codex, cursor`,
     )
   }
 }

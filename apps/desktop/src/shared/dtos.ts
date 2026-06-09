@@ -1,4 +1,4 @@
-﻿export type ClientId = 'claude-desktop' | 'claude-code' | 'codex' | 'cursor'
+export type ClientId = 'claude-code' | 'codex' | 'cursor'
 
 export type WorkspaceContextStatus = 'not_initialized' | 'ready'
 

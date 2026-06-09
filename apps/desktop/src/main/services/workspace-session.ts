@@ -16,7 +16,6 @@ import {
   type AdapterName,
   type ClientAdapter,
   ClaudeCodeAdapter,
-  ClaudeDesktopAdapter,
   CodexAdapter,
   CursorAdapter,
 } from '@mcpspace/adapters'
@@ -100,10 +99,6 @@ class DesktopAdapterFactory implements AdapterFactory {
   get(client: string): ClientAdapter {
     const name = client as AdapterName
 
-    if (name === 'claude-desktop') {
-      return new ClaudeDesktopAdapter(this.pathResolver)
-    }
-
     if (name === 'claude-code') {
       return new ClaudeCodeAdapter(this.pathResolver, this.workspacePath)
     }
@@ -117,7 +112,7 @@ class DesktopAdapterFactory implements AdapterFactory {
     }
 
     throw new Error(
-      `Unsupported client '${client}'. Use: claude-desktop, claude-code, codex, cursor`,
+      `Unsupported client '${client}'. Use: claude-code, codex, cursor`,
     )
   }
 }
@@ -251,9 +246,9 @@ export class WorkspaceSession {
     return this.ensureRuntime().workspaceService.plan(clientName)
   }
 
-  async sync(clientName: string): Promise<SyncPlan> {
+  async sync(clientName: string, options: { backup?: boolean } = {}): Promise<SyncPlan> {
     this.ensureReadyWorkspace()
-    return this.ensureRuntime().workspaceService.sync(clientName)
+    return this.ensureRuntime().workspaceService.sync(clientName, options)
   }
 
   async addMcp(toolName: string, options?: { command?: string; args?: string[]; env?: Record<string, string>; package?: string }): Promise<WorkspaceStatusDto> {

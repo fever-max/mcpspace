@@ -183,7 +183,7 @@ Ready interaction model:
 
 ## 5. DTO 타입 초안
 
-- `ClientId`: `claude-desktop | claude-code | codex | cursor`
+- `ClientId`: `claude-code | codex | cursor`
 - `WorkspaceContextDto`: `path`, `name`, `configPath`, `status`, `isOpen`
 - `WorkspaceStatusDto`: `workspace`, `clients`, `tools`, `outOfSyncCount`, `inSyncCount`
 - `ClientStatusDto`: `clientName`, `outOfSync`, `error?`, `assignedMcpCount`

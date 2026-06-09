@@ -24,7 +24,6 @@
 
 | Adapter | detect | read | apply | backup | restore | validate |
 |---|---|---|---|---|---|---|
-| Claude Desktop | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Codex | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Cursor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -187,28 +186,47 @@ Settings 화면은 4개 섹션으로 구성한다. 설정값은 모두 `localSto
 
 ### Doctor 화면
 
-Doctor 화면은 workspace 상태 진단을 제공한다. `workspace:doctor` IPC 채널로 결과를 받는다.
+문제 원인과 해결 힌트를 보여주는 진단 화면. MCP 추가/삭제나 attach/detach는 하지 않는다.
+`workspace:doctor` IPC 채널로 진단 결과를 한 번에 받는다.
 
-**상단 헬스 카드**
-- [ ] Overall Status (Healthy / Warning / Error), Last Checked, Workspace 이름 표시
-- [ ] Run Checks 버튼
+**상단 헬스 카드 (필수)**
+- [ ] Overall Status (Healthy / Warning / Error)
+- [ ] Workspace 이름, Last Checked, Last Sync 시간 (없으면 `Never synced`)
+- [ ] Doctor 화면 진입 시 자동으로 진단 실행
+- [ ] Run Checks 버튼 — 수동으로 재진단
 
-**체크 카드 3개**
-- [ ] Config Path Check — `.mcpspace/config.yaml` 존재 여부
-- [ ] Desired State Validation — config 로드 + zod 스키마 검증
-- [ ] Sync Status — `outOfSyncCount` 기반 In Sync / Out of Sync 표시
+**체크 카드 3개 (필수)**
+- [ ] Config File Check — `.mcpspace/config.yaml` 존재 여부, 읽기/parse 가능 여부
+- [ ] Desired State Validation — zod 스키마 검증 결과, 실패 시 오류 메시지
+- [ ] Sync Status — `outOfSyncCount` 기반 In Sync / Out of Sync + Last Sync 시간
 
-**Adapter Detection**
-- [ ] 각 client(Codex, Claude Code, Cursor, Claude Desktop) adapter `detect()` 결과 표시
-- [ ] 클라이언트별 상태: Healthy / Warning / Not Detected, 연결된 툴 수
+**Adapter Detection (필수)**
+- [ ] Codex / Claude Code / Cursor 각각 상태 표시
+  - `Healthy` / `Warning` / `Not Detected` + 연결된 툴 수
+  - 실제 client config 파일 존재 여부
+
+**Backup Summary (있으면 좋음)**
+- [ ] 최근 백업 시간, 백업 개수
+- [ ] View Backups 버튼 → 백업 폴더 열기 (`shell.openPath`)
 
 **Warnings**
-- [ ] 위 체크 결과에서 문제 항목만 목록으로 표시
+- [ ] 문제 항목만 목록 표시 (config 없음, parse 실패, out of sync, 백업 없음 등)
 
 **IPC**
-- [ ] `workspace:doctor` 채널 구현 — 위 체크 결과를 한 번에 반환
-  - `workspace-session.ts` → config 검증 + adapter detect + status 조합
-  - response: `{ overall, configCheck, validationCheck, syncCheck, adapters, warnings }`
+- [ ] `workspace:doctor` 채널 구현
+  - `workspace-session.ts`에서 조합: config 검증 + zod + status + adapter detect + backup
+  - response DTO:
+    ```ts
+    {
+      overall: { status, lastCheckedAt, workspaceName, lastSyncAt }
+      configCheck: { status, exists, readable, parseValid, message }
+      validationCheck: { status, valid, errors, message }
+      syncCheck: { status, outOfSyncCount, lastSyncAt, message }
+      adapters: Array<{ client, status, toolCount, configExists, message }>
+      backupSummary: { lastBackupAt, backupCount, message }
+      warnings: Array<{ level, source, message }>
+    }
+    ```
 
 ### polish
 

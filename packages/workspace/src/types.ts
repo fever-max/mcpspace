@@ -22,7 +22,7 @@ export interface WorkspaceService {
   attach(toolName: string, clientName: string): Promise<import('@mcpspace/reconciler').SyncPlan>
   detach(toolName: string, clientName: string): Promise<import('@mcpspace/reconciler').SyncPlan>
   plan(clientName: string): Promise<import('@mcpspace/reconciler').SyncPlan>
-  sync(clientName: string): Promise<import('@mcpspace/reconciler').SyncPlan>
+  sync(clientName: string, options?: { backup?: boolean }): Promise<import('@mcpspace/reconciler').SyncPlan>
   status(): Promise<WorkspaceStatus>
 }
 

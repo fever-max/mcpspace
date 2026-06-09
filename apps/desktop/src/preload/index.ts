@@ -23,7 +23,7 @@ const api = {
     detach: (toolName: string, clientName: ClientId) =>
       ipcRenderer.invoke(IPC_CHANNELS.workspace.detach, toolName, clientName),
     plan: (clientName: ClientId) => ipcRenderer.invoke(IPC_CHANNELS.workspace.plan, clientName),
-    sync: (clientName: ClientId) => ipcRenderer.invoke(IPC_CHANNELS.workspace.sync, clientName),
+    sync: (clientName: ClientId, options?: { backup?: boolean }) => ipcRenderer.invoke(IPC_CHANNELS.workspace.sync, clientName, options ?? {}),
     mcpAdd: (toolName: string, options: WorkspaceMcpAddOptions) =>
       ipcRenderer.invoke(IPC_CHANNELS.workspace.mcpAdd, toolName, options),
     mcpUpdate: (toolName: string, nextToolName: string, options: WorkspaceMcpAddOptions) =>
@@ -45,7 +45,7 @@ type DesktopApi = {
     attach(toolName: string, clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
     detach(toolName: string, clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
     plan(clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
-    sync(clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
+    sync(clientName: ClientId, options?: { backup?: boolean }): Promise<IpcResult<SyncPlanDto>>
     mcpAdd(toolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
     mcpUpdate(toolName: string, nextToolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
     mcpRemove(toolName: string): Promise<IpcResult<WorkspaceStatusDto>>

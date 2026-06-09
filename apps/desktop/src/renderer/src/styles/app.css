@@ -931,6 +931,11 @@ h1 {
   transform: translateX(14px);
 }
 
+.setting-toggle-track.on {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
 .settings-title {
   font-size: 14px;
   font-weight: 700;
@@ -1266,6 +1271,19 @@ code {
   font-size: 14px;
 }
 
+.modal-help-copy {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modal-help-copy span {
+  display: block;
+}
+
 .modal-close {
   position: absolute;
   top: 16px;
@@ -1400,6 +1418,7 @@ body[data-theme="dark"] .modal-add-mcp {
 }
 
 body[data-theme="dark"] .modal-body p,
+body[data-theme="dark"] .modal-help-copy,
 body[data-theme="dark"] .modal-field-label,
 body[data-theme="dark"] .catalog-description,
 body[data-theme="dark"] .catalog-selection-summary,
@@ -1614,6 +1633,11 @@ body[data-theme="dark"] .modal-close {
 body[data-theme="dark"] .setting-toggle-track {
   background: #1f2b43;
   border-color: #2a3650;
+}
+
+body[data-theme="dark"] .setting-toggle-track.on {
+  background: #2563eb;
+  border-color: #2563eb;
 }
 
 body[data-theme="dark"] .settings-select-control {
@@ -1962,7 +1986,6 @@ body[data-theme="dark"] .badge.danger {
   color: #1d4ed8;
 }
 
-.client-avatar-claude-desktop,
 .client-avatar-claude-code {
   background: #fff1e8;
   color: #c2410c;

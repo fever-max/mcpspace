@@ -6,6 +6,11 @@ type I18nKey =
   | 'common.openProjectFolderToConnect'
   | 'common.openWorkspace'
   | 'common.learnMoreAboutWorkspaces'
+  | 'common.learnMoreAboutWorkspacesTitle'
+  | 'common.learnMoreAboutWorkspacesLine1'
+  | 'common.learnMoreAboutWorkspacesLine2'
+  | 'common.learnMoreAboutWorkspacesLine3'
+  | 'common.learnMoreAboutWorkspacesLine4'
   | 'common.noWorkspaceYet'
   | 'common.openProjectFolderToGetStarted'
   | 'common.noWorkspaceSelected'
@@ -62,6 +67,9 @@ type I18nKey =
   | 'common.applyChanges'
   | 'common.selectAiClientToReviewChanges'
   | 'common.noChangeFor'
+  | 'common.noChangesToApply'
+  | 'common.attach'
+  | 'common.detach'
   | 'common.registered'
   | 'common.usedBy'
   | 'common.noAisUsingTool'
@@ -135,6 +143,11 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.openProjectFolderToConnect': 'Open a project folder to connect a workspace and start managing MCP tools for your AI clients.',
     'common.openWorkspace': 'Open Workspace',
     'common.learnMoreAboutWorkspaces': 'Learn more about workspaces',
+    'common.learnMoreAboutWorkspacesTitle': 'What is a workspace?',
+    'common.learnMoreAboutWorkspacesLine1': 'A workspace is the project folder for mcpspace.',
+    'common.learnMoreAboutWorkspacesLine2': 'mcpspace stores .mcpspace/config.yaml in that folder and reads it back later.',
+    'common.learnMoreAboutWorkspacesLine3': 'You can add MCP tools there and connect them to AI clients.',
+    'common.learnMoreAboutWorkspacesLine4': 'Open a project folder first, then get started.',
     'common.noWorkspaceYet': 'No workspaces yet',
     'common.openProjectFolderToGetStarted': 'Open a project folder to get started.',
     'common.openWorkspaceFolder': 'Open Workspace Folder',
@@ -193,6 +206,9 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.applyChanges': 'Apply Changes',
     'common.selectAiClientToReviewChanges': 'Select an AI client to review changes.',
     'common.noChangeFor': 'No change for',
+    'common.noChangesToApply': 'No changes to apply.',
+    'common.attach': 'Attach',
+    'common.detach': 'Detach',
     'common.registered': 'Registered',
     'common.usedBy': 'Used by',
     'common.noAisUsingTool': 'No AI clients are using this tool.',
@@ -251,7 +267,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'settings.value.korean': '한국어',
     'sync.confirm.title': 'Apply changes?',
     'sync.confirm.description': 'This will sync the selected AI client and update its config file.',
-    'sync.confirm.apply': 'Apply Changes',
+    'sync.confirm.apply': 'Apply',
     'sync.confirm.cancel': 'Cancel',
   },
   ko: {
@@ -260,6 +276,11 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.openProjectFolderToConnect': '프로젝트 폴더를 열어 작업 폴더를 연결하고 AI 클라이언트를 위한 MCP 도구 관리를 시작합니다.',
     'common.openWorkspace': '작업 폴더 열기',
     'common.learnMoreAboutWorkspaces': '작업 폴더 자세히 보기',
+    'common.learnMoreAboutWorkspacesTitle': '작업 폴더란 무엇인가요?',
+    'common.learnMoreAboutWorkspacesLine1': '작업 폴더는 mcpspace가 사용하는 프로젝트 폴더입니다.',
+    'common.learnMoreAboutWorkspacesLine2': '이 폴더 안에 .mcpspace/config.yaml이 저장되고 다시 읽힙니다.',
+    'common.learnMoreAboutWorkspacesLine3': '여기에 MCP 도구를 추가하고 AI 클라이언트에 연결할 수 있습니다.',
+    'common.learnMoreAboutWorkspacesLine4': '먼저 작업 폴더를 연 다음 시작하세요.',
     'common.noWorkspaceYet': '아직 작업 폴더가 없습니다',
     'common.openProjectFolderToGetStarted': '프로젝트 폴더를 열어 시작하세요.',
     'common.openWorkspaceFolder': '작업 폴더 폴더 열기',
@@ -318,6 +339,9 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.applyChanges': '변경 적용',
     'common.selectAiClientToReviewChanges': '변경 사항을 검토할 AI 클라이언트를 선택하세요.',
     'common.noChangeFor': '변경 없음',
+    'common.noChangesToApply': '적용할 변경 사항이 없습니다.',
+    'common.attach': '연결',
+    'common.detach': '해제',
     'common.registered': '등록됨',
     'common.usedBy': '사용 중',
     'common.noAisUsingTool': '이 도구를 사용하는 AI 클라이언트가 없습니다.',
@@ -376,7 +400,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'settings.value.korean': '한국어',
     'sync.confirm.title': '변경 사항을 적용할까요?',
     'sync.confirm.description': '선택한 AI 클라이언트를 동기화하여 설정 파일을 갱신합니다.',
-    'sync.confirm.apply': '변경 적용',
+    'sync.confirm.apply': '적용',
     'sync.confirm.cancel': '취소',
   },
 }

@@ -66,7 +66,7 @@ export class DefaultWorkspaceService implements WorkspaceService {
     return this.reconciler.plan(desired, actual.actual)
   }
 
-  async sync(clientName: string): Promise<SyncPlan> {
+  async sync(clientName: string, options: { backup?: boolean } = {}): Promise<SyncPlan> {
     const desired = await this.configLoader.loadProjectConfig()
     const adapter = this.adapterFactory.get(clientName)
     const detected = await adapter.detect()
@@ -80,7 +80,9 @@ export class DefaultWorkspaceService implements WorkspaceService {
     let backupPath: string | undefined
 
     try {
-      backupPath = await adapter.backup()
+      if (options.backup !== false) {
+        backupPath = await adapter.backup()
+      }
       await adapter.applyPlan(plan)
 
       const validation = await adapter.validate()

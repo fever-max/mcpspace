@@ -18,6 +18,7 @@ type ViewState = {
   plan: SyncPlanDto | null
   loading: boolean
   error: string | null
+  workspaceHelpOpen: boolean
   initConfirmOpen: boolean
   toolModalMode: 'add' | 'edit' | null
   toolModalOriginalName: string | null
@@ -136,6 +137,7 @@ const state: ViewState = {
   plan: null,
   loading: false,
   error: null,
+  workspaceHelpOpen: false,
   initConfirmOpen: false,
   toolModalMode: null,
   toolModalOriginalName: null,
@@ -155,7 +157,6 @@ const state: ViewState = {
   assignedClientsToolName: null,
   selectedClient: null,
   draftAssignments: {
-    'claude-desktop': [],
     'claude-code': [],
     codex: [],
     cursor: [],
@@ -305,17 +306,15 @@ const getWorkspaceBadgeClass = (workspace: WorkspaceContextDto | null, status: W
 }
 
 
-const clientOrder: ClientId[] = ['codex', 'claude-code', 'cursor', 'claude-desktop']
+const clientOrder: ClientId[] = ['codex', 'claude-code', 'cursor']
 
 const clientDisplayNames: Record<ClientId, string> = {
-  'claude-desktop': 'Claude Desktop',
   'claude-code': 'Claude Code',
   codex: 'Codex',
   cursor: 'Cursor',
 }
 
 const clientAvatarLabels: Record<ClientId, string> = {
-  'claude-desktop': 'CD',
   'claude-code': 'CC',
   codex: 'CX',
   cursor: 'CU',
@@ -397,14 +396,12 @@ const sortToolsByWorkspaceOrder = (status: WorkspaceStatusDto | null, toolNames:
 }
 
 const buildDraftAssignmentsFromStatus = (status: WorkspaceStatusDto | null): Record<ClientId, string[]> => ({
-  'claude-desktop': sortToolsByWorkspaceOrder(status, getActualAssignmentsForClient(status, 'claude-desktop')),
   'claude-code': sortToolsByWorkspaceOrder(status, getActualAssignmentsForClient(status, 'claude-code')),
   codex: sortToolsByWorkspaceOrder(status, getActualAssignmentsForClient(status, 'codex')),
   cursor: sortToolsByWorkspaceOrder(status, getActualAssignmentsForClient(status, 'cursor')),
 })
 
 const clearDraftAssignments = (): Record<ClientId, string[]> => ({
-  'claude-desktop': [],
   'claude-code': [],
   codex: [],
   cursor: [],
@@ -452,7 +449,7 @@ const syncSelectedClient = async (client: ClientId | null = getSelectedClient())
   state.error = null
   render()
 
-  const result = await window.mcpspace.workspace.sync(client)
+  const result = await window.mcpspace.workspace.sync(client, { backup: state.autoBackupBeforeApply })
   if (!result.ok) {
     state.error = result.error.message
     state.loading = false
@@ -876,7 +873,7 @@ const renderMcpManualForm = (primaryLabel: string, title: string, description: s
       </div>
       <div class="modal-actions modal-actions-right">
         <button data-action="cancel-add-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
-        <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${primaryLabel}</span></button>
+        <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(state.loading)}>${primaryLabel}</button>
       </div>
     </section>
   </div>
@@ -962,7 +959,7 @@ const renderCatalogMcpModal = (): string => {
         </div>
         <div class="modal-actions modal-actions-right">
           <button data-action="cancel-add-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
-          <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(primaryDisabled)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.addSelected')}</span></button>
+          <button data-action="confirm-add-tool" class="button primary" ${disabledAttr(primaryDisabled)}>${t('common.addSelected')}</button>
         </div>
       </section>
     </div>
@@ -1040,7 +1037,7 @@ const renderRemoveToolModal = (): string => {
         </div>
         <div class="modal-actions">
           <button data-action="cancel-remove-tool" class="button secondary" ${disabledAttr(state.loading)}>${t('common.close')}</button>
-          <button data-action="confirm-remove-tool" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.dots}</span><span>${t('common.remove')}</span></button>
+          <button data-action="confirm-remove-tool" class="button primary" ${disabledAttr(state.loading)}>${t('common.remove')}</button>
         </div>
       </section>
     </div>
@@ -1129,8 +1126,8 @@ const renderEmptyState = (): string => `
       <p class="hero-description">${t('common.openProjectFolderToConnect')}</p>
     </div>
     <div class="hero-actions">
-      <button data-action="open-workspace" class="button primary"><span class="button-icon">${icon.folder}</span><span>${t('common.openWorkspace')}</span></button>
-      <button class="ghost-link" type="button" disabled><span class="button-icon link-icon">${icon.book}</span><span>${t('common.learnMoreAboutWorkspaces')}</span></button>
+      <button data-action="open-workspace" class="button primary">${t('common.openWorkspace')}</button>
+      <button data-action="open-workspace-help" class="ghost-link" type="button">${t('common.learnMoreAboutWorkspaces')}</button>
     </div>
   </section>
 `
@@ -1159,8 +1156,8 @@ const renderNotInitializedState = (): string => {
           <p class="hero-subtext">${t('common.initInstructions')}</p>
         </div>
         <div class="hero-actions">
-          <button data-action="show-init-confirm" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.initializeWorkspace')}</span></button>
-          <button data-action="open-workspace" class="button secondary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.folder}</span><span>${t('common.openAnotherWorkspace')}</span></button>
+          <button data-action="show-init-confirm" class="button primary" ${disabledAttr(state.loading)}>${t('common.initializeWorkspace')}</button>
+          <button data-action="open-workspace" class="button secondary" ${disabledAttr(state.loading)}>${t('common.openAnotherWorkspace')}</button>
         </div>
       </section>
 
@@ -1196,7 +1193,7 @@ const renderSettingsSection = (): string => `
             <div class="settings-description">${t('settings.general.confirm.description')}</div>
           </div>
           <button data-action="toggle-setting" data-setting="confirmBeforeSync" class="setting-toggle" type="button" aria-label="${t('settings.general.confirm.title')}">
-            <span class="setting-toggle-track">
+            <span class="setting-toggle-track${state.confirmBeforeSync ? ' on' : ''}">
               <span class="setting-toggle-thumb${state.confirmBeforeSync ? ' on' : ''}"></span>
             </span>
           </button>
@@ -1208,7 +1205,7 @@ const renderSettingsSection = (): string => `
             <div class="settings-description">${t('settings.general.backup.description')}</div>
           </div>
           <button data-action="toggle-setting" data-setting="autoBackupBeforeApply" class="setting-toggle" type="button" aria-label="${t('settings.general.backup.title')}">
-            <span class="setting-toggle-track">
+            <span class="setting-toggle-track${state.autoBackupBeforeApply ? ' on' : ''}">
               <span class="setting-toggle-thumb${state.autoBackupBeforeApply ? ' on' : ''}"></span>
             </span>
           </button>
@@ -1262,7 +1259,7 @@ const renderSettingsSection = (): string => `
             <div class="settings-description">${t('settings.autoOpen.description')}</div>
           </div>
           <button data-action="toggle-setting" data-setting="autoOpenLastWorkspace" class="setting-toggle" type="button" aria-label="${t('settings.autoOpen.title')}">
-            <span class="setting-toggle-track">
+            <span class="setting-toggle-track${state.autoOpenLastWorkspace ? ' on' : ''}">
               <span class="setting-toggle-thumb${state.autoOpenLastWorkspace ? ' on' : ''}"></span>
             </span>
           </button>
@@ -1317,7 +1314,7 @@ const renderReadyState = (): string => {
             <h2>${t('common.workspaceMcpTools')}</h2>
             <p class="muted">${t('common.manageWorkspaceMcpTools')}</p>
           </div>
-          <button data-action="add-mcp" class="button secondary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>${t('common.addMcp')}</span></button>
+          <button data-action="add-mcp" class="button primary toolbar-button" type="button"><span class="button-icon">${icon.sparkles}</span><span>${t('common.addMcp')}</span></button>
         </div>
 
         <div class="registry-list">
@@ -1457,7 +1454,7 @@ const renderReadyState = (): string => {
             selectedClient
               ? selectedClientPlan
                 ? changeRows.length === 0
-                  ? '<div class="changes-empty">No changes to apply.</div>'
+                  ? `<div class="changes-empty">${t('common.noChangesToApply')}</div>`
                   : changeRows
                       .map(
                         (action) => {
@@ -1465,8 +1462,8 @@ const renderReadyState = (): string => {
                             return `
                               <div class="change-row change-attach">
                                 <span class="change-icon">↑</span>
-                                <span>Attach <strong>${action.toolName}</strong> to <strong>${selectedClientLabel}</strong></span>
-                                <span class="pill pill-success">Attach</span>
+                                <span>${t('common.attach')} <strong>${action.toolName}</strong> to <strong>${selectedClientLabel}</strong></span>
+                                <span class="pill pill-success">${t('common.attach')}</span>
                               </div>
                             `
                           }
@@ -1485,8 +1482,8 @@ const renderReadyState = (): string => {
                             return `
                               <div class="change-row change-detach">
                                 <span class="change-icon">↓</span>
-                                <span>Detach <strong>${action.toolName}</strong> from <strong>${selectedClientLabel}</strong></span>
-                                <span class="pill pill-warning">Detach</span>
+                                <span>${t('common.detach')} <strong>${action.toolName}</strong> from <strong>${selectedClientLabel}</strong></span>
+                                <span class="pill pill-warning">${t('common.detach')}</span>
                               </div>
                             `
                           }
@@ -1509,7 +1506,7 @@ const renderReadyState = (): string => {
         ${selectedClientPlan ? `<div class="changes-summary muted">${selectedClientPlan.summary.create} ${t('common.create')}, ${selectedClientPlan.summary.update} ${t('common.update')}, ${selectedClientPlan.summary.delete} ${t('common.delete')}, ${selectedClientPlan.summary.noop} ${t('common.noop')}</div>` : ''}
 
         <div class="changes-footer">
-          <button data-action="refresh-plan" class="button secondary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.search}</span><span>${t('common.reviewChanges')}</span></button>
+          <button data-action="refresh-plan" class="button secondary icon-button" type="button" ${disabledAttr(state.loading || !selectedClient)} aria-label="${t('common.reviewChanges')}" title="${t('common.reviewChanges')}"><span class="button-icon">${icon.search}</span></button>
           <button data-action="sync-client" class="button primary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.refresh}</span><span>${t('common.applyChanges')}</span></button>
         </div>
       </section>
@@ -1559,7 +1556,33 @@ const renderInitConfirmModal = (): string => {
         </div>
         <div class="modal-actions">
           <button data-action="cancel-init-workspace" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
-          <button data-action="confirm-init-workspace" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.sparkles}</span><span>${t('common.initializeWorkspace')}</span></button>
+          <button data-action="confirm-init-workspace" class="button primary" ${disabledAttr(state.loading)}>${t('common.initializeWorkspace')}</button>
+        </div>
+      </section>
+    </div>
+  `
+}
+
+const renderWorkspaceHelpModal = (): string => {
+  if (state.workspace || !state.workspaceHelpOpen) {
+    return ''
+  }
+
+    return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="workspace-help-modal-title">
+        <div class="modal-icon" aria-hidden="true">${icon.book}</div>
+        <div class="modal-body">
+          <h3 id="workspace-help-modal-title">${t('common.learnMoreAboutWorkspacesTitle')}</h3>
+          <div class="modal-help-copy">
+            <span>${t('common.learnMoreAboutWorkspacesLine1')}</span>
+            <span>${t('common.learnMoreAboutWorkspacesLine2')}</span>
+            <span>${t('common.learnMoreAboutWorkspacesLine3')}</span>
+            <span>${t('common.learnMoreAboutWorkspacesLine4')}</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button data-action="close-workspace-help" class="button secondary">${t('common.close')}</button>
         </div>
       </section>
     </div>
@@ -1584,7 +1607,7 @@ const renderSyncConfirmModal = (): string => {
         </div>
         <div class="modal-actions">
           <button data-action="cancel-sync-client" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
-          <button data-action="confirm-sync-client" class="button primary" ${disabledAttr(state.loading)}><span class="button-icon">${icon.refresh}</span><span>${t('sync.confirm.apply')}</span></button>
+          <button data-action="confirm-sync-client" class="button primary" ${disabledAttr(state.loading)}>${t('sync.confirm.apply')}</button>
         </div>
       </section>
     </div>
@@ -1596,7 +1619,19 @@ const bindActionHandlers = (): void => {
   document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace"]').forEach((button) => {
     button.addEventListener('click', async () => {
       state.activeSection = 'workspaces'
+      state.workspaceHelpOpen = false
       await openWorkspace()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace-help"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (state.workspace) {
+        return
+      }
+
+      state.workspaceHelpOpen = true
+      render()
     })
   })
 
@@ -1823,6 +1858,13 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="close-workspace-help"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.workspaceHelpOpen = false
+      render()
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-theme"]').forEach((button) => {
     button.addEventListener('click', () => {
       const nextThemeMode = state.theme === 'dark' ? 'light' : 'dark'
@@ -1970,7 +2012,7 @@ const render = (): void => {
         ${renderSidebarWorkspace()}
 
         <div class="sidebar-footer">
-          <button data-action="open-workspace" class="button secondary sidebar-button"><span class="button-icon">${icon.folder}</span><span>${t('common.openWorkspaceFolder')}</span></button>
+          <button data-action="open-workspace" class="button secondary sidebar-button">${t('common.openWorkspaceFolder')}</button>
           <div class="sidebar-footer-row">
             <div class="theme-toggle-shell" aria-hidden="true">
               <span class="theme-toggle-icon">${state.theme === 'light' ? icon.sun : icon.moon}</span>
@@ -1997,7 +2039,7 @@ const render = (): void => {
             state.activeSection === 'workspaces'
               ? `
                 <div class="header-actions">
-                  <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button" type="button" ${disabledAttr(state.loading)}><span class="button-icon">${icon.refresh}</span><span>Refresh</span></button>
+                  <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button icon-button" type="button" ${disabledAttr(state.loading)} aria-label="${t('common.refresh')}" title="${t('common.refresh')}"><span class="button-icon">${icon.refresh}</span></button>
                   <button class="button secondary" type="button" aria-label="More options" disabled><span class="button-icon">${icon.dots}</span></button>
                 </div>
               `
@@ -2010,6 +2052,7 @@ const render = (): void => {
       </main>
     </div>
     ${renderInitConfirmModal()}
+    ${renderWorkspaceHelpModal()}
     ${renderSyncConfirmModal()}
     ${renderAddToolModal()}
     ${renderRemoveToolModal()}

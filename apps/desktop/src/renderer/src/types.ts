@@ -20,7 +20,7 @@ declare global {
         attach(toolName: string, client: ClientId): Promise<IpcResult<SyncPlanDto>>
         detach(toolName: string, client: ClientId): Promise<IpcResult<SyncPlanDto>>
         plan(client: ClientId): Promise<IpcResult<SyncPlanDto>>
-        sync(client: ClientId): Promise<IpcResult<SyncPlanDto>>
+        sync(client: ClientId, options?: { backup?: boolean }): Promise<IpcResult<SyncPlanDto>>
         mcpAdd(toolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
         mcpUpdate(toolName: string, nextToolName: string, options: WorkspaceMcpAddOptions): Promise<IpcResult<WorkspaceStatusDto>>
         mcpRemove(toolName: string): Promise<IpcResult<WorkspaceStatusDto>>

@@ -64,7 +64,6 @@ mcpspace mcp add my-tool \
 
 | Client | ID |
 |---|---|
-| Claude Desktop | `claude-desktop` |
 | Claude Code | `claude-code` |
 | Codex | `codex` |
 | Cursor | `cursor` |
@@ -170,7 +169,6 @@ mcpspace mcp add my-tool \
 
 | 클라이언트 | ID |
 |---|---|
-| Claude Desktop | `claude-desktop` |
 | Claude Code | `claude-code` |
 | Codex | `codex` |
 | Cursor | `cursor` |

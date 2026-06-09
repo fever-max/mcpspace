@@ -1,3 +1,3 @@
-export type ClientName = 'claude-desktop' | 'claude-code' | 'codex' | 'cursor'
+export type ClientName = 'claude-code' | 'codex' | 'cursor'
 
 

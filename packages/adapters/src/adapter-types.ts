@@ -1,5 +1,4 @@
 export enum AdapterKind {
-  ClaudeDesktop = 'claude-desktop',
   ClaudeCode = 'claude-code',
   Codex = 'codex',
   Cursor = 'cursor',
