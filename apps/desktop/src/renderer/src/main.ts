@@ -41,11 +41,13 @@ type ViewState = {
   themeMode: 'system' | 'light' | 'dark'
   theme: 'light' | 'dark'
   lang: Lang
+  languageMenuOpen: boolean
   autoOpenLastWorkspace: boolean
   confirmBeforeSync: boolean
   autoBackupBeforeApply: boolean
   syncConfirmOpen: boolean
   syncConfirmClient: ClientId | null
+  reviewLoading: boolean
 }
 
 type AppSettings = {
@@ -164,11 +166,13 @@ const state: ViewState = {
   themeMode: initialSettings.themeMode,
   theme: resolveTheme(initialSettings.themeMode),
   lang: initialSettings.lang,
+  languageMenuOpen: false,
   autoOpenLastWorkspace: initialSettings.autoOpenLastWorkspace,
   confirmBeforeSync: initialSettings.confirmBeforeSync,
   autoBackupBeforeApply: initialSettings.autoBackupBeforeApply,
   syncConfirmOpen: false,
   syncConfirmClient: null,
+  reviewLoading: false,
 }
 
 const applyThemeMode = (themeMode: ViewState['themeMode']): void => {
@@ -314,11 +318,13 @@ const clientDisplayNames: Record<ClientId, string> = {
   cursor: 'Cursor',
 }
 
-const clientAvatarLabels: Record<ClientId, string> = {
-  'claude-code': 'CC',
-  codex: 'CX',
-  cursor: 'CU',
+const clientAvatarIcons: Record<ClientId, string> = {
+  'claude-code': '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/></svg>',
+  codex: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>',
+  cursor: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0"/><path d="M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23"/></svg>',
 }
+
+const getClientAvatarLabel = (client: ClientId): string => clientAvatarIcons[client] ?? client.slice(0, 2).toUpperCase()
 
 const toolDisplayNames: Record<string, string> = {
   filesystem: 'File system operations',
@@ -337,7 +343,6 @@ const toolAvatarLabels: Record<string, string> = {
 }
 
 const getClientDisplayName = (client: ClientId): string => clientDisplayNames[client] ?? client
-const getClientAvatarLabel = (client: ClientId): string => clientAvatarLabels[client] ?? client.slice(0, 2).toUpperCase()
 const getToolDisplayName = (toolName: string): string => toolDisplayNames[toolName] ?? toolName
 const getToolAvatarLabel = (toolName: string): string => toolAvatarLabels[toolName] ?? toolName.slice(0, 2).toUpperCase()
 const formatInitializeWorkspaceInfoBody = (): string => {
@@ -411,16 +416,22 @@ const getDraftToolsForClient = (client: ClientId): string[] => state.draftAssign
 
 const getSelectedClient = (): ClientId | null => state.selectedClient ?? getPreferredClientSelection(state.status?.clients ?? [])
 
-const refreshSelectedClientPlan = async (client: ClientId | null = getSelectedClient()): Promise<void> => {
+const refreshSelectedClientPlan = async (
+  client: ClientId | null = getSelectedClient(),
+  options: { clearFirst?: boolean } = {},
+): Promise<void> => {
   if (!client || !state.workspace || state.workspace.status !== 'ready') {
     state.plan = null
     render()
     return
   }
 
+  const clearFirst = options.clearFirst ?? true
   const currentPlanRequestId = ++planRequestId
-  state.plan = null
-  render()
+  if (clearFirst) {
+    state.plan = null
+    render()
+  }
 
   const result = await window.mcpspace.workspace.plan(client)
   if (currentPlanRequestId !== planRequestId) {
@@ -438,6 +449,23 @@ const refreshSelectedClientPlan = async (client: ClientId | null = getSelectedCl
   }
 
   render()
+}
+
+const reviewSelectedClientChanges = async (client: ClientId | null = getSelectedClient()): Promise<void> => {
+  if (!client) {
+    return
+  }
+
+  state.reviewLoading = true
+  state.error = null
+  render()
+
+  try {
+    await refreshSelectedClientPlan(client, { clearFirst: false })
+  } finally {
+    state.reviewLoading = false
+    render()
+  }
 }
 
 const syncSelectedClient = async (client: ClientId | null = getSelectedClient()): Promise<void> => {
@@ -950,7 +978,7 @@ const renderCatalogMcpModal = (): string => {
               ? `
                 <div class="catalog-selection-summary">
                   <span class="muted">${t('common.selectedCatalogMcps')}</span>
-                  <strong>${selectedTools.length}</strong>
+                  <span class="catalog-selection-count">${selectedTools.length}</span>
                   <span class="muted">${selectedTools.map((tool) => tool.toolName).join(', ')}</span>
                 </div>
               `
@@ -1085,7 +1113,6 @@ const renderSidebarWorkspace = (): string => {
       <section class="sidebar-workspaces empty">
         <div class="sidebar-workspaces-heading">${t('common.workspaces')}</div>
         <div class="sidebar-empty-title">${t('common.noWorkspacesYet')}</div>
-        <div class="sidebar-empty-subtitle">${t('common.openWorkspaceToGetStarted')}</div>
       </section>
     `
   }
@@ -1118,8 +1145,7 @@ const renderSidebarWorkspace = (): string => {
 const renderEmptyState = (): string => `
   <section class="hero empty">
     <div class="hero-illustration hero-illustration-empty" aria-hidden="true">
-      <div class="hero-badge"></div>
-      <div class="hero-folder"></div>
+      <div class="hero-folder hero-folder-icon">${icon.folder}</div>
     </div>
     <div class="hero-copy">
       <div class="hero-title">${t('common.noWorkspaceConnected')}</div>
@@ -1236,13 +1262,18 @@ const renderSettingsSection = (): string => `
             <div class="settings-title">${t('settings.language.title')}</div>
             <div class="settings-description">${t('settings.language.description')}</div>
           </div>
-          <label class="settings-select" aria-label="${t('settings.language.title')}">
-            <select data-action="set-language-select" class="settings-select-control">
-              <option value="en" ${state.lang === 'en' ? 'selected' : ''}>${t('settings.language.english')}</option>
-              <option value="ko" ${state.lang === 'ko' ? 'selected' : ''}>${t('settings.language.korean')}</option>
-            </select>
-            <span class="settings-select-chevron" aria-hidden="true">${icon.chevron}</span>
-          </label>
+          <div class="settings-select settings-select-menu" aria-label="${t('settings.language.title')}">
+            <button data-action="toggle-language-menu" class="settings-select-control settings-select-trigger" type="button" aria-haspopup="menu" aria-expanded="${state.languageMenuOpen ? 'true' : 'false'}">
+              <span class="settings-select-value">${state.lang === 'ko' ? t('settings.language.korean') : t('settings.language.english')}</span>
+              <span class="settings-select-chevron" aria-hidden="true">${icon.chevron}</span>
+            </button>
+            ${state.languageMenuOpen ? `
+              <div class="settings-select-panel" role="menu">
+                <button data-action="set-language-option" data-lang="en" class="settings-select-option${state.lang === 'en' ? ' active' : ''}" type="button">${t('settings.language.english')}</button>
+                <button data-action="set-language-option" data-lang="ko" class="settings-select-option${state.lang === 'ko' ? ' active' : ''}" type="button">${t('settings.language.korean')}</button>
+              </div>
+            ` : ''}
+          </div>
         </div>
       </div>
     </section>
@@ -1390,11 +1421,7 @@ const renderReadyState = (): string => {
           <div class="panel-header panel-header-split">
             <div>
               <h2>${t('common.mcpToolsFor')} ${selectedClientLabel}</h2>
-              <p class="muted">${t('common.chooseWhichMcpToolsShouldBeAvailable')} ${selectedClientLabel}.</p>
-            </div>
-            <div class="selected-client-chip">
-              <span class="selected-client-label">${t('common.selectedClient')}</span>
-              <span class="pill pill-neutral">${selectedClientLabel}</span>
+              <p class="muted">${t('common.chooseWhichMcpToolsShouldBeAvailable')}</p>
             </div>
           </div>
 
@@ -1447,9 +1474,11 @@ const renderReadyState = (): string => {
               <h2>${t('common.changesToApply')}</h2>
               <p class="muted">${t('common.reviewChanges')} ${selectedClientLabel}.</p>
             </div>
+          <button data-action="refresh-plan" class="button secondary" type="button" ${disabledAttr(state.loading || !selectedClient)} aria-label="${t('common.reviewChanges')}" title="${t('common.reviewChanges')}"><span class="button-icon">${icon.search}</span><span>${t('common.reviewChanges')}</span></button>
         </div>
 
-        <div class="changes-list">
+        <div class="changes-list-shell${state.reviewLoading ? ' is-loading' : ''}">
+          <div class="changes-list${state.reviewLoading ? ' is-dimmed' : ''}">
           ${
             selectedClient
               ? selectedClientPlan
@@ -1501,12 +1530,23 @@ const renderReadyState = (): string => {
                 : `<div class="changes-empty">${t('common.loadingChanges')}</div>`
               : `<div class="changes-empty">${t('common.selectAiClientToReviewChanges')}</div>`
           }
+          </div>
+
+          ${
+            state.reviewLoading
+              ? `
+                <div class="changes-loading-overlay" aria-live="polite" aria-busy="true">
+                  <div class="changes-loading-spinner" aria-hidden="true"></div>
+                  <div class="changes-loading-label">${t('common.loadingChanges')}</div>
+                </div>
+              `
+              : ''
+          }
         </div>
 
         ${selectedClientPlan ? `<div class="changes-summary muted">${selectedClientPlan.summary.create} ${t('common.create')}, ${selectedClientPlan.summary.update} ${t('common.update')}, ${selectedClientPlan.summary.delete} ${t('common.delete')}, ${selectedClientPlan.summary.noop} ${t('common.noop')}</div>` : ''}
 
         <div class="changes-footer">
-          <button data-action="refresh-plan" class="button secondary icon-button" type="button" ${disabledAttr(state.loading || !selectedClient)} aria-label="${t('common.reviewChanges')}" title="${t('common.reviewChanges')}"><span class="button-icon">${icon.search}</span></button>
           <button data-action="sync-client" class="button primary" type="button" ${disabledAttr(state.loading || !selectedClient)}><span class="button-icon">${icon.refresh}</span><span>${t('common.applyChanges')}</span></button>
         </div>
       </section>
@@ -1552,7 +1592,6 @@ const renderInitConfirmModal = (): string => {
         <div class="modal-body">
           <h3 id="init-workspace-modal-title">${t('common.initializeWorkspaceQuestion')}</h3>
           <p>${formatInitializeWorkspaceInfoBody()}</p>
-          <p>${t('common.initializeWorkspaceInfoFooter')}</p>
         </div>
         <div class="modal-actions">
           <button data-action="cancel-init-workspace" class="button secondary" ${disabledAttr(state.loading)}>${t('sync.confirm.cancel')}</button>
@@ -1613,7 +1652,6 @@ const renderSyncConfirmModal = (): string => {
     </div>
   `
 }
-
 
 const bindActionHandlers = (): void => {
   document.querySelectorAll<HTMLButtonElement>('[data-action="open-workspace"]').forEach((button) => {
@@ -1758,8 +1796,15 @@ const bindActionHandlers = (): void => {
 
   document.querySelectorAll<HTMLInputElement>('[data-action="catalog-search"]').forEach((input) => {
     input.addEventListener('input', () => {
+      const selStart = input.selectionStart
+      const selEnd = input.selectionEnd
       state.catalogSearch = input.value
       render()
+      const restored = document.querySelector<HTMLInputElement>('[data-action="catalog-search"]')
+      if (restored) {
+        restored.focus()
+        restored.setSelectionRange(selStart, selEnd)
+      }
     })
   })
 
@@ -1885,14 +1930,24 @@ const bindActionHandlers = (): void => {
     })
   })
 
-  document.querySelectorAll<HTMLSelectElement>('[data-action="set-language-select"]').forEach((select) => {
-    select.addEventListener('change', () => {
-      const lang = select.value as Lang | undefined
+  document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-language-menu"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.languageMenuOpen = !state.languageMenuOpen
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="set-language-option"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const lang = button.dataset.lang as Lang | undefined
       if (!lang || state.lang === lang) {
+        state.languageMenuOpen = false
+        render()
         return
       }
 
       state.lang = lang
+      state.languageMenuOpen = false
       persistSettings()
       render()
     })
@@ -1937,8 +1992,9 @@ const bindActionHandlers = (): void => {
   })
 
   document.querySelectorAll<HTMLButtonElement>('[data-action="refresh-plan"]').forEach((button) => {
-    button.addEventListener('click', () => {
-      void refreshSelectedClientPlan()
+    button.addEventListener('click', async () => {
+      const selectedClient = getSelectedClient()
+      void reviewSelectedClientChanges(selectedClient)
     })
   })
 
@@ -1970,6 +2026,8 @@ const render = (): void => {
   const selectedClient = getSelectedClient()
   const badgeLabel = getWorkspaceBadgeLabel(state.workspace, state.status)
   const badgeClass = getWorkspaceBadgeClass(state.workspace, state.status)
+  const previousActiveSection = state.activeSection
+  const previousMainScrollTop = root.querySelector<HTMLElement>('.main')?.scrollTop ?? 0
   const sectionHeadings: Record<ViewState['activeSection'], { eyebrow: string; title: string; subtitle: string }> = {
     workspaces: {
       eyebrow: t('common.workspace'),
@@ -2040,7 +2098,6 @@ const render = (): void => {
               ? `
                 <div class="header-actions">
                   <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button icon-button" type="button" ${disabledAttr(state.loading)} aria-label="${t('common.refresh')}" title="${t('common.refresh')}"><span class="button-icon">${icon.refresh}</span></button>
-                  <button class="button secondary" type="button" aria-label="More options" disabled><span class="button-icon">${icon.dots}</span></button>
                 </div>
               `
               : ''
@@ -2051,15 +2108,24 @@ const render = (): void => {
         ${renderWorkspaceBody()}
       </main>
     </div>
-    ${renderInitConfirmModal()}
-    ${renderWorkspaceHelpModal()}
-    ${renderSyncConfirmModal()}
-    ${renderAddToolModal()}
+      ${renderInitConfirmModal()}
+      ${renderWorkspaceHelpModal()}
+      ${renderSyncConfirmModal()}
+      ${renderAddToolModal()}
     ${renderRemoveToolModal()}
     ${renderAssignedClientsModal()}
   `
 
   bindActionHandlers()
+
+  if (previousActiveSection === state.activeSection && previousMainScrollTop > 0) {
+    window.requestAnimationFrame(() => {
+      const main = root.querySelector<HTMLElement>('.main')
+      if (main) {
+        main.scrollTop = previousMainScrollTop
+      }
+    })
+  }
 }
 
 

@@ -589,43 +589,43 @@ h1 {
 }
 
 .hero-illustration-empty {
-  width: 180px;
-  height: 140px;
-}
-
-.hero-badge {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 54px;
-  height: 54px;
-  transform: translateX(-50%);
-  border-radius: 16px;
-  background: #eef4ff;
-  border: 1px solid #dbe7ff;
-  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.10);
+  width: 188px;
+  height: 148px;
 }
 
 .hero-folder {
-  position: absolute;
-  bottom: 4px;
-  width: 122px;
-  height: 80px;
-  border-radius: 16px 16px 12px 12px;
-  border: 2px solid #b9c8f5;
-  background: linear-gradient(180deg, #dfe9ff 0%, #cddcff 100%);
+  width: 128px;
+  height: 128px;
+  border-radius: 18px 18px 14px 14px;
+  border: 0;
+  background: transparent;
+  color: #c7d7fb;
+  display: grid;
+  place-items: center;
+}
+
+.hero-folder-icon svg {
+  width: 128px;
+  height: 128px;
+  transform: scale(1.18);
+  transform-origin: center;
+  display: block;
+}
+
+body[data-theme="dark"] .hero-folder {
+  color: #9fb7e6;
 }
 
 .hero-illustration-warning {
-  width: 124px;
-  height: 124px;
+  width: 136px;
+  height: 136px;
   border-radius: 50%;
   background: #fff3cd;
 }
 
 .hero-warning-mark {
-  width: 44px;
-  height: 44px;
+  width: 74px;
+  height: 74px;
   display: grid;
   place-items: center;
   color: #d97706;
@@ -633,8 +633,11 @@ h1 {
 }
 
 .hero-warning-mark svg {
-  width: 36px;
-  height: 36px;
+  width: 64px;
+  height: 64px;
+  transform: scale(1.18);
+  transform-origin: center;
+  display: block;
 }
 
 .hero-copy {
@@ -980,21 +983,38 @@ h1 {
 .settings-select {
   position: relative;
   display: inline-flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   flex: 0 0 auto;
 }
 
 .settings-select-control {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
   border: 1px solid #dbe4f0;
-  border-radius: 12px;
+  border-radius: 999px;
   background: #ffffff;
   color: #334155;
   font-size: 12px;
   font-weight: 600;
-  padding: 9px 34px 9px 14px;
-  min-width: 170px;
+  padding: 10px 14px 10px 16px;
+  min-width: 180px;
+  min-height: 40px;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.settings-select-trigger {
+  width: 100%;
+  gap: 16px;
+}
+
+.settings-select-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
 }
 
 .settings-select-control:focus {
@@ -1003,12 +1023,44 @@ h1 {
 }
 
 .settings-select-chevron {
-  position: absolute;
-  right: 12px;
+  flex: 0 0 auto;
   pointer-events: none;
   color: #64748b;
   display: inline-flex;
   align-items: center;
+}
+
+.settings-select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+}
+
+.settings-select-option {
+  border: 0;
+  background: transparent;
+  color: #334155;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-select-option:hover,
+.settings-select-option.active {
+  background: rgba(29, 78, 216, 0.1);
+  color: #1d4ed8;
 }
 
 .settings-select-chevron svg {
@@ -1032,6 +1084,53 @@ h1 {
 .changes-list {
   display: grid;
   gap: 8px;
+}
+
+.changes-list-shell {
+  position: relative;
+}
+
+.changes-list-shell.is-loading .change-row,
+.changes-list-shell.is-loading .changes-empty,
+.changes-list-shell.is-loading .changes-summary {
+  filter: blur(0.5px);
+}
+
+.changes-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+.changes-loading-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid rgba(37, 99, 235, 0.18);
+  border-top-color: #2563eb;
+  animation: spin 0.9s linear infinite;
+}
+
+.changes-loading-label {
+  font-size: 12px;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .client-row,
@@ -1061,6 +1160,10 @@ h1 {
 .tool-meta {
   color: #6b7280;
   font-size: 10px;
+}
+
+.changes-panel {
+  gap: 8px;
 }
 
 .changes-header {
@@ -1150,7 +1253,6 @@ h1 {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 12px;
 }
 
 .status-summary {
@@ -1399,11 +1501,22 @@ code {
 .catalog-selection-summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid #dbe4f0;
   background: #f8fafc;
+  font-size: 12px;
+}
+
+.catalog-selection-summary .muted {
+  margin: 0;
+}
+
+.catalog-selection-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
 }
 
 body[data-theme="dark"] .modal-backdrop {
@@ -1644,10 +1757,27 @@ body[data-theme="dark"] .settings-select-control {
   background: #0f172a;
   border-color: #24324a;
   color: #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 body[data-theme="dark"] .settings-select-chevron {
   color: #94a3b8;
+}
+
+body[data-theme="dark"] .settings-select-panel {
+  background: #0f172a;
+  border-color: #24324a;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme="dark"] .settings-select-option {
+  color: #cbd5e1;
+}
+
+body[data-theme="dark"] .settings-select-option:hover,
+body[data-theme="dark"] .settings-select-option.active {
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
 }
 
 body[data-theme="dark"] .settings-link-button-compact {
@@ -1671,6 +1801,19 @@ body[data-theme="dark"] .changes-header .button {
   background: #111c31;
   border-color: #24324a;
   color: #e2e8f0;
+}
+
+body[data-theme="dark"] .changes-loading-overlay {
+  background: rgba(15, 23, 42, 0.66);
+}
+
+body[data-theme="dark"] .changes-loading-label {
+  color: #bfdbfe;
+}
+
+body[data-theme="dark"] .changes-loading-spinner {
+  border-color: rgba(59, 130, 246, 0.2);
+  border-top-color: #60a5fa;
 }
 
 body[data-theme="dark"] .button.danger {
@@ -1977,6 +2120,11 @@ body[data-theme="dark"] .badge.danger {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+.client-avatar svg {
+  width: 18px;
+  height: 18px;
 }
 
 .client-avatar {

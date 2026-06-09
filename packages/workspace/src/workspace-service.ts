@@ -110,10 +110,7 @@ export class DefaultWorkspaceService implements WorkspaceService {
     const desired = await this.configLoader.loadProjectConfig()
     const state = await this.stateRepository.load()
 
-    const clientNames = new Set<string>([
-      ...Object.keys(desired.clients),
-      ...Object.keys(state.assignments),
-    ])
+    const clientNames = new Set<string>(Object.keys(desired.clients))
 
     const clients: ClientStatusView[] = []
 

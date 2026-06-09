@@ -11,8 +11,6 @@ type I18nKey =
   | 'common.learnMoreAboutWorkspacesLine2'
   | 'common.learnMoreAboutWorkspacesLine3'
   | 'common.learnMoreAboutWorkspacesLine4'
-  | 'common.noWorkspaceYet'
-  | 'common.openProjectFolderToGetStarted'
   | 'common.noWorkspaceSelected'
   | 'common.openAnotherWorkspace'
   | 'common.workspaceNotInitialized'
@@ -35,7 +33,6 @@ type I18nKey =
   | 'common.initializeWorkspaceQuestion'
   | 'common.initializeWorkspaceInfoTitle'
   | 'common.initializeWorkspaceInfoBody'
-  | 'common.initializeWorkspaceInfoFooter'
   | 'common.addMcpMode'
   | 'common.fromCatalog'
   | 'common.manualInput'
@@ -84,7 +81,6 @@ type I18nKey =
   | 'common.lastChecked'
   | 'common.workspaceLabel'
   | 'common.noWorkspacesYet'
-  | 'common.openWorkspaceToGetStarted'
   | 'common.inSync'
   | 'common.outOfSync'
   | 'common.notConfigured'
@@ -148,8 +144,6 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.learnMoreAboutWorkspacesLine2': 'mcpspace stores .mcpspace/config.yaml in that folder and reads it back later.',
     'common.learnMoreAboutWorkspacesLine3': 'You can add MCP tools there and connect them to AI clients.',
     'common.learnMoreAboutWorkspacesLine4': 'Open a project folder first, then get started.',
-    'common.noWorkspaceYet': 'No workspaces yet',
-    'common.openProjectFolderToGetStarted': 'Open a project folder to get started.',
     'common.openWorkspaceFolder': 'Open Workspace Folder',
     'common.noWorkspaceSelected': 'No workspace selected',
     'common.noWorkspaceSelectedDescription': 'Open a workspace to begin.',
@@ -174,12 +168,11 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.initializeWorkspaceQuestion': 'Initialize workspace?',
     'common.initializeWorkspaceInfoTitle': 'What happens when you initialize?',
     'common.initializeWorkspaceInfoBody': 'mcpspace will create a .mcpspace folder in this workspace and generate a config.yaml file with default settings. You can customize the configuration after initialization.',
-    'common.initializeWorkspaceInfoFooter': 'You can customize the configuration after initialization.',
     'common.addMcpMode': 'Add MCP mode',
-    'common.fromCatalog': 'From Catalog',
-    'common.manualInput': 'Manual Input',
+    'common.fromCatalog': 'Catalog',
+    'common.manualInput': 'Manual',
     'common.searchMcp': 'Search MCPs',
-    'common.addSelected': 'Add Selected',
+    'common.addSelected': 'Add',
     'common.chooseCatalogMcpToPrefill': 'Choose a catalog MCP to prefill command and args.',
     'common.noCatalogMatches': 'No catalog MCPs match your search.',
     'common.catalogLoading': 'Loading catalog MCPs...',
@@ -220,7 +213,6 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.lastChecked': 'Last Checked',
     'common.workspaceLabel': 'Workspace',
     'common.noWorkspacesYet': 'No workspaces yet',
-    'common.openWorkspaceToGetStarted': 'Open a project folder to get started.',
     'common.inSync': 'In sync',
     'common.outOfSync': 'Out of sync',
     'common.notConfigured': 'Not Configured',
@@ -281,8 +273,6 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.learnMoreAboutWorkspacesLine2': '이 폴더 안에 .mcpspace/config.yaml이 저장되고 다시 읽힙니다.',
     'common.learnMoreAboutWorkspacesLine3': '여기에 MCP 도구를 추가하고 AI 클라이언트에 연결할 수 있습니다.',
     'common.learnMoreAboutWorkspacesLine4': '먼저 작업 폴더를 연 다음 시작하세요.',
-    'common.noWorkspaceYet': '아직 작업 폴더가 없습니다',
-    'common.openProjectFolderToGetStarted': '프로젝트 폴더를 열어 시작하세요.',
     'common.openWorkspaceFolder': '작업 폴더 폴더 열기',
     'common.noWorkspaceSelected': '선택된 작업 폴더 없음',
     'common.noWorkspaceSelectedDescription': '작업 폴더를 열어 시작하세요.',
@@ -307,12 +297,11 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.initializeWorkspaceQuestion': '작업 폴더를 초기화할까요?',
     'common.initializeWorkspaceInfoTitle': '초기화하면 어떻게 되나요?',
     'common.initializeWorkspaceInfoBody': 'mcpspace는 이 작업 폴더에 .mcpspace 폴더를 만들고 기본 설정이 들어간 config.yaml 파일을 생성합니다. 초기화 후 설정을 수정할 수 있습니다.',
-    'common.initializeWorkspaceInfoFooter': '초기화 후 설정을 수정할 수 있습니다.',
     'common.addMcpMode': 'MCP 추가 모드',
-    'common.fromCatalog': '카탈로그에서',
-    'common.manualInput': '직접 입력',
+    'common.fromCatalog': '카탈로그',
+    'common.manualInput': '수동 등록',
     'common.searchMcp': 'MCP 검색',
-    'common.addSelected': '선택 항목 추가',
+    'common.addSelected': '추가',
     'common.chooseCatalogMcpToPrefill': '카탈로그의 MCP를 선택하면 command와 args가 자동 입력됩니다.',
     'common.noCatalogMatches': '검색 결과와 일치하는 카탈로그 MCP가 없습니다.',
     'common.catalogLoading': '카탈로그 MCP를 불러오는 중입니다...',
@@ -353,7 +342,6 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.lastChecked': '마지막 확인',
     'common.workspaceLabel': '작업 폴더',
     'common.noWorkspacesYet': '아직 작업 폴더가 없습니다',
-    'common.openWorkspaceToGetStarted': '프로젝트 폴더를 열어 시작하세요.',
     'common.inSync': '동기화됨',
     'common.outOfSync': '동기화 안 됨',
     'common.notConfigured': '설정 안 됨',
