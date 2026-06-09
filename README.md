@@ -81,6 +81,22 @@ mcpspace mcp add my-tool \
 
 A GUI Electron app for managing MCP tools and AI clients.
 
+### Installation
+
+Download the installer from [GitHub Releases](https://github.com/fever-max/mcpspace/releases).
+
+- **Windows** — `.exe` installer (NSIS)
+- **macOS** — `.dmg` (coming soon)
+
+### Build from Source
+
+```bash
+npm install
+npm run desktop:package
+```
+
+Output is placed in `apps/desktop/dist/`.
+
 ### Dev Mode
 
 ```bash
@@ -90,9 +106,12 @@ npm run desktop:dev
 
 ### Screens
 
-- **Empty State** — Select a workspace folder to get started
+- **Workspaces** — Open a project folder and manage MCP tools per workspace
 - **Not Initialized** — Folder selected but no `.mcpspace/config.yaml` yet. Click `Initialize Workspace` to create it.
-- **Ready** — Select an AI client, manage its MCP tools, and apply changes.
+- **Ready** — Select an AI client, view attached MCP tools, and apply changes.
+- **Marketplace** — Browse available MCP tools and add them to your workspace.
+- **Doctor** — Diagnose workspace health, config validity, and sync status.
+- **Settings** — Configure theme, language, and workspace behavior.
 
 ---
 
@@ -186,6 +205,22 @@ mcpspace mcp add my-tool \
 
 GUI로 MCP 툴과 AI 클라이언트를 관리하는 Electron 앱.
 
+### 설치
+
+[GitHub Releases](https://github.com/fever-max/mcpspace/releases)에서 설치 파일 다운로드.
+
+- **Windows** — `.exe` 설치파일 (NSIS)
+- **macOS** — `.dmg` (추후 지원 예정)
+
+### 직접 빌드
+
+```bash
+npm install
+npm run desktop:package
+```
+
+빌드 결과물은 `apps/desktop/dist/`에 생성됩니다.
+
 ### 개발 모드 실행
 
 ```bash
@@ -195,9 +230,12 @@ npm run desktop:dev
 
 ### 화면 구성
 
-- **Empty State** — workspace 폴더를 선택하지 않은 초기 상태
+- **작업 폴더** — 프로젝트 폴더를 열고 MCP 툴을 workspace별로 관리
 - **Not Initialized** — 폴더는 선택됐지만 `.mcpspace/config.yaml`이 없는 상태. `Initialize Workspace`로 생성.
 - **Ready** — AI 클라이언트 선택 후 MCP 툴 관리 및 변경 적용.
+- **마켓플레이스** — 사용 가능한 MCP 툴 탐색 및 workspace에 추가.
+- **진단** — workspace 상태, config 유효성, sync 상태 진단.
+- **설정** — 테마, 언어, workspace 동작 설정.
 
 ---
 

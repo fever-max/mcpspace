@@ -83,7 +83,7 @@ button:disabled {
   background: transparent;
   text-align: left;
   color: #374151;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .nav-item.active {
