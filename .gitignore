@@ -50,8 +50,8 @@ package-lock.json
 
 # docs and agent
 docs/*
-!docs/desktop-mvp-spec.md
-!docs/todo.md
+!docs/mcpspace-guide-ko.pdf
+!docs/mcpspace-guide-en.pdf
 AGENT.md
 rules/
 
