@@ -7,6 +7,7 @@ import type {
   WorkspaceAttachResponse,
   WorkspaceCopyPathResponse,
   WorkspaceCurrentResponse,
+  WorkspaceDoctorResponse,
   WorkspaceDetachResponse,
   WorkspaceMcpAddOptions,
   WorkspaceMcpMutationErrorCode,
@@ -55,6 +56,12 @@ const toStatusError = (error: unknown): WorkspaceStatusErrorCode => {
   const message = error instanceof Error ? error.message : 'Unknown error'
   if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
   if (message.toLowerCase().includes('validation failed')) return 'VALIDATION_FAILED'
+  return 'UNKNOWN_ERROR'
+}
+
+const toDoctorError = (error: unknown): 'WORKSPACE_NOT_OPEN' | 'UNKNOWN_ERROR' => {
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  if (message.includes('No workspace selected.')) return 'WORKSPACE_NOT_OPEN'
   return 'UNKNOWN_ERROR'
 }
 
@@ -219,6 +226,15 @@ export const registerWorkspaceIpc = (services: DesktopServices, ipcMain: IpcMain
       return ok(status)
     } catch (error) {
       return fail(toStatusError(error), error instanceof Error ? error.message : 'Unknown error')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.workspace.doctor, async (): Promise<WorkspaceDoctorResponse> => {
+    try {
+      const doctor = await services.workspaceSession.doctor()
+      return ok(doctor)
+    } catch (error) {
+      return fail(toDoctorError(error), error instanceof Error ? error.message : 'Unknown error')
     }
   })
 

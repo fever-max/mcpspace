@@ -5,6 +5,7 @@ export const IPC_CHANNELS = {
     init: 'workspace:init',
     current: 'workspace:current',
     status: 'workspace:status',
+    doctor: 'workspace:doctor',
     attach: 'workspace:attach',
     detach: 'workspace:detach',
     plan: 'workspace:plan',

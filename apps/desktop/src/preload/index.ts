@@ -8,6 +8,7 @@ import type {
   McpCatalogListDto,
   SyncPlanDto,
   WorkspaceContextDto,
+  WorkspaceDoctorDto,
   WorkspaceStatusDto,
 } from '../shared/dtos.js'
 
@@ -18,6 +19,7 @@ const api = {
     init: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.init),
     current: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.current),
     status: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.status),
+    doctor: () => ipcRenderer.invoke(IPC_CHANNELS.workspace.doctor),
     attach: (toolName: string, clientName: ClientId) =>
       ipcRenderer.invoke(IPC_CHANNELS.workspace.attach, toolName, clientName),
     detach: (toolName: string, clientName: ClientId) =>
@@ -42,6 +44,7 @@ type DesktopApi = {
     init(): Promise<IpcResult<WorkspaceContextDto>>
     current(): Promise<IpcResult<WorkspaceContextDto | null>>
     status(): Promise<IpcResult<WorkspaceStatusDto>>
+    doctor(): Promise<IpcResult<WorkspaceDoctorDto>>
     attach(toolName: string, clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
     detach(toolName: string, clientName: ClientId): Promise<IpcResult<SyncPlanDto>>
     plan(clientName: ClientId): Promise<IpcResult<SyncPlanDto>>

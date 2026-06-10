@@ -3,6 +3,7 @@ import type {
   McpCatalogListDto,
   SyncPlanDto,
   WorkspaceContextDto,
+  WorkspaceDoctorDto,
   WorkspaceStatusDto,
 } from '../../shared/dtos.js'
 
@@ -22,6 +23,10 @@ export type WorkspaceCurrentErrorCode = 'UNKNOWN_ERROR'
 export type WorkspaceStatusErrorCode =
   | 'WORKSPACE_NOT_OPEN'
   | 'VALIDATION_FAILED'
+  | 'UNKNOWN_ERROR'
+
+export type WorkspaceDoctorErrorCode =
+  | 'WORKSPACE_NOT_OPEN'
   | 'UNKNOWN_ERROR'
 
 export type WorkspaceAttachDetachErrorCode =
@@ -64,6 +69,7 @@ export type WorkspaceOpenPathResponse = WorkspaceOpenResponse
 export type WorkspaceInitResponse = IpcResult<WorkspaceContextDto, WorkspaceInitErrorCode>
 export type WorkspaceCurrentResponse = IpcResult<WorkspaceContextDto | null, WorkspaceCurrentErrorCode>
 export type WorkspaceStatusResponse = IpcResult<WorkspaceStatusDto, WorkspaceStatusErrorCode>
+export type WorkspaceDoctorResponse = IpcResult<WorkspaceDoctorDto, WorkspaceDoctorErrorCode>
 export type WorkspaceAttachResponse = IpcResult<SyncPlanDto, WorkspaceAttachDetachErrorCode>
 export type WorkspaceDetachResponse = IpcResult<SyncPlanDto, WorkspaceAttachDetachErrorCode>
 export type WorkspacePlanResponse = IpcResult<SyncPlanDto, WorkspacePlanErrorCode>

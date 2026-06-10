@@ -8,6 +8,7 @@ import type {
   McpCatalogEntryDto,
   SyncPlanDto,
   WorkspaceContextDto,
+  WorkspaceDoctorDto,
   WorkspaceStatusDto,
 } from '../../shared/dtos.js'
 
@@ -15,10 +16,13 @@ type ViewState = {
   activeSection: 'workspaces' | 'marketplace' | 'doctor' | 'settings'
   workspace: WorkspaceContextDto | null
   status: WorkspaceStatusDto | null
+  doctor: WorkspaceDoctorDto | null
   plan: SyncPlanDto | null
   loading: boolean
+  doctorLoading: boolean
   error: string | null
   workspaceHelpOpen: boolean
+  guideOpen: boolean
   initConfirmOpen: boolean
   toolModalMode: 'add' | 'edit' | null
   toolModalOriginalName: string | null
@@ -137,10 +141,13 @@ const state: ViewState = {
   activeSection: 'workspaces',
   workspace: null,
   status: null,
+  doctor: null,
   plan: null,
   loading: false,
+  doctorLoading: false,
   error: null,
   workspaceHelpOpen: false,
+  guideOpen: false,
   initConfirmOpen: false,
   toolModalMode: null,
   toolModalOriginalName: null,
@@ -264,6 +271,74 @@ const rememberWorkspace = (workspace: WorkspaceContextDto | null): void => {
   writeLastWorkspacePath(workspace.path)
 }
 
+const formatDateTime = (value: string | null): string => {
+  if (!value) {
+    return t('doctor.neverSynced')
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(getLanguage() === 'ko' ? 'ko-KR' : 'en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date)
+}
+
+const getDoctorHealthLabel = (status: WorkspaceDoctorDto['overall']['status']): string => {
+  if (status === 'healthy') {
+    return t('doctor.healthy')
+  }
+
+  if (status === 'warning') {
+    return t('doctor.warning')
+  }
+
+  return t('doctor.error')
+}
+
+const getDoctorHealthClass = (status: WorkspaceDoctorDto['overall']['status']): string => {
+  if (status === 'healthy') {
+    return 'badge success'
+  }
+
+  if (status === 'warning') {
+    return 'badge warning'
+  }
+
+  return 'badge danger'
+}
+
+const getDoctorAdapterLabel = (status: WorkspaceDoctorDto['adapters'][number]['status']): string => {
+  if (status === 'healthy') {
+    return t('doctor.healthy')
+  }
+
+  if (status === 'warning') {
+    return t('doctor.warning')
+  }
+
+  return t('doctor.notDetected')
+}
+
+const getDoctorAdapterClass = (status: WorkspaceDoctorDto['adapters'][number]['status']): string => {
+  if (status === 'healthy') {
+    return 'badge success'
+  }
+
+  if (status === 'warning') {
+    return 'badge warning'
+  }
+
+  return 'badge danger'
+}
+
 const icon = {
   folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.75A2.25 2.25 0 0 1 5.25 4.5h4.39c.6 0 1.17.24 1.59.66l1.15 1.14c.42.42.99.66 1.59.66h5.83A2.25 2.25 0 0 1 22 9.21v7.54A2.25 2.25 0 0 1 19.75 19H5.25A2.25 2.25 0 0 1 3 16.75V6.75Z" fill="currentColor"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 15H6A2 2 0 0 1 4 13V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -277,6 +352,13 @@ const icon = {
   book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h10A2.5 2.5 0 0 1 20 4.5v15A2.5 2.5 0 0 1 17.5 22H7a3 3 0 0 1-3-3V4.5Zm2.5-.5A.5.5 0 0 0 7 4.5V19a1 1 0 0 0 1 1h9.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5h-10Z" fill="currentColor"/></svg>',
   chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   warning: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.25 4.56a1 1 0 0 1 1.5 0l8.08 11.73A1 1 0 0 1 20.01 18H3.99a1 1 0 0 1-.83-1.71L11.25 4.56ZM12 9a1 1 0 0 0-1 1v3.5a1 1 0 1 0 2 0V10a1 1 0 0 0-1-1Zm0 8.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z" fill="currentColor"/></svg>',
+  link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.59 13.41a1 1 0 0 1 0-1.41l3-3a3 3 0 1 1 4.24 4.24l-1.65 1.64-1.41-1.41 1.64-1.65a1 1 0 1 0-1.41-1.41l-3 3a1 1 0 0 1-1.41 0Zm2.82-2.82a1 1 0 0 1 0 1.41l-3 3a3 3 0 0 1-4.24-4.24l1.65-1.64 1.41 1.41-1.64 1.65a1 1 0 1 0 1.41 1.41l3-3a1 1 0 0 1 1.41 0Z" fill="currentColor"/></svg>',
+  checkCircle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm4.78-11.72-5.5 5.5a1 1 0 0 1-1.41 0l-2.65-2.65 1.41-1.41 1.94 1.94 4.79-4.79 1.42 1.41Z" fill="currentColor"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10.01 10.01 0 0 0 12 2Zm1 10.59 3.3 3.29-1.42 1.42-3.59-3.59A1 1 0 0 1 11 13V7h2Z" fill="currentColor"/></svg>',
+  file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.41l-3.83-3.83A2 2 0 0 0 13.17 4H7Zm6 1.41L17.59 9H14a1 1 0 0 1-1-1V4.41ZM9 13h6v2H9v-2Zm0 4h6v2H9v-2Zm0-8h3v2H9V9Z" fill="currentColor"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.25 3.44 9.44 8 11 4.56-1.56 8-5.75 8-11V5l-8-3Zm0 17.86c-3.45-1.4-6-4.87-6-8.86V6.38l6-2.25 6 2.25V11c0 3.99-2.55 7.46-6 8.86Zm-1.3-5.15-2.4-2.41-1.42 1.42 3.12 3.12a1 1 0 0 0 1.41 0l5.3-5.3-1.42-1.41-4.59 4.58Z" fill="currentColor"/></svg>',
+  sync: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.32 8.06A7 7 0 0 1 19 11h-2a5 5 0 0 0-8.54-3.54L11 10H4V3l2.32 2.32ZM18 14v7l-2.32-2.32A7 7 0 0 1 5 13h2a5 5 0 0 0 8.54 3.54L13 14h5Z" fill="currentColor"/></svg>',
+  help: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-1-5h2v2h-2v-2Zm1.61-9.96a3.5 3.5 0 0 0-3.6 2.3l1.88.67A1.5 1.5 0 1 1 12 10a1 1 0 0 0-1 1v2h2v-1.16a3.5 3.5 0 0 0-.39-6.8Z" fill="currentColor"/></svg>',
 }
 
 const getWorkspaceBadgeLabel = (workspace: WorkspaceContextDto | null, status: WorkspaceStatusDto | null): string | null => {
@@ -519,6 +601,7 @@ const requestSyncSelectedClient = (client: ClientId | null = getSelectedClient()
 const refreshWorkspaceView = async (): Promise<void> => {
   state.loading = true
   state.error = null
+  state.doctor = null
   render()
 
   const currentResult = await window.mcpspace.workspace.current()
@@ -552,6 +635,32 @@ const refreshWorkspaceView = async (): Promise<void> => {
   }
 
   state.loading = false
+  render()
+}
+
+const loadDoctor = async (): Promise<void> => {
+  if (!state.workspace) {
+    state.doctor = null
+    state.doctorLoading = false
+    render()
+    return
+  }
+
+  state.doctorLoading = true
+  state.error = null
+  render()
+
+  const result = await window.mcpspace.workspace.doctor()
+  if (!result.ok) {
+    state.error = result.error.message
+    state.doctor = null
+    state.doctorLoading = false
+    render()
+    return
+  }
+
+  state.doctor = result.data
+  state.doctorLoading = false
   render()
 }
 
@@ -1173,7 +1282,7 @@ const renderEmptyState = (): string => `
     </div>
     <div class="hero-actions">
       <button data-action="open-workspace" class="button primary">${t('common.openWorkspace')}</button>
-      <button data-action="open-workspace-help" class="ghost-link" type="button">${t('common.learnMoreAboutWorkspaces')}</button>
+      <button data-action="open-guide" class="ghost-link" type="button">${t('common.learnMoreAboutWorkspaces')}</button>
     </div>
   </section>
 `
@@ -1224,6 +1333,206 @@ const renderComingSoonSection = (title: string, description: string): string => 
     <p class="muted">${description}</p>
   </section>
 `
+
+const renderDoctorSection = (): string => {
+  if (!state.workspace) {
+    return `
+      <section class="card panel coming-soon-card">
+        <div class="coming-soon-icon" aria-hidden="true">${icon.warning}</div>
+        <h2>${t('doctor.noWorkspaceTitle')}</h2>
+        <p class="muted">${t('doctor.noWorkspaceDescription')}</p>
+      </section>
+    `
+  }
+
+  if (!state.doctor) {
+    return `
+      <section class="card panel coming-soon-card">
+        <div class="coming-soon-icon" aria-hidden="true">${icon.warning}</div>
+        <h2>${t('common.overallStatus')}</h2>
+        <p class="muted">${state.doctorLoading ? t('doctor.runningChecks') : t('doctor.runChecksToDiagnose')}</p>
+      </section>
+    `
+  }
+
+  const doctor = state.doctor
+  const workspacePath = state.workspace.path
+  const configStatusClass = getDoctorHealthClass(doctor.configCheck.status)
+  const validationStatusClass = getDoctorHealthClass(doctor.validationCheck.status)
+  const syncStatusClass = getDoctorHealthClass(doctor.syncCheck.status)
+  const overallIcon = doctor.overall.status === 'healthy' ? icon.checkCircle : icon.warning
+  const syncStatusLabel = doctor.syncCheck.outOfSyncCount > 0
+    ? t('common.outOfSync')
+    : doctor.syncCheck.status === 'healthy'
+      ? t('common.inSync')
+      : getDoctorHealthLabel(doctor.syncCheck.status)
+
+  return `
+    <div class="doctor-stack">
+      <section class="card doctor-overall-card">
+        <div class="doctor-overall-status">
+          <div class="doctor-overall-icon doctor-overall-icon-${doctor.overall.status}" aria-hidden="true">${overallIcon}</div>
+          <div class="doctor-overall-copy">
+            <div class="doctor-overall-title">${getDoctorHealthLabel(doctor.overall.status)}</div>
+            <p class="muted">${doctor.overall.message}</p>
+          </div>
+        </div>
+
+        <div class="doctor-overall-metrics">
+          <div class="doctor-metric">
+            <span class="doctor-metric-label">${t('common.workspaceLabel')}</span>
+            <span class="doctor-metric-value">${doctor.overall.workspaceName}</span>
+          </div>
+          <div class="doctor-metric">
+            <span class="doctor-metric-label">${t('common.lastChecked')}</span>
+            <span class="doctor-metric-value">${formatDateTime(doctor.overall.lastCheckedAt)}</span>
+          </div>
+          <div class="doctor-metric">
+            <span class="doctor-metric-label">${t('doctor.lastSync')}</span>
+            <span class="doctor-metric-value">${formatDateTime(doctor.overall.lastSyncAt)}</span>
+          </div>
+        </div>
+
+        <button data-action="run-doctor-checks" class="button primary" type="button" ${disabledAttr(state.doctorLoading)}>
+          <span>${t('common.runChecks')}</span>
+        </button>
+      </section>
+
+      <section class="doctor-check-grid">
+        <section class="card panel doctor-check-card">
+          <div class="panel-header panel-header-split">
+            <div class="doctor-check-heading">
+              <span class="doctor-check-title-icon" aria-hidden="true">${icon.file}</span>
+              <h2>${t('doctor.configFileCheck')}</h2>
+            </div>
+            <span class="${configStatusClass}">${getDoctorHealthLabel(doctor.configCheck.status)}</span>
+          </div>
+          <p class="muted">${doctor.configCheck.message}</p>
+          <dl class="doctor-detail-list">
+            <div><dt>${t('doctor.path')}</dt><dd><code>${doctor.configCheck.path.replace(`${workspacePath}\\`, '')}</code></dd></div>
+            <div><dt>${t('doctor.exists')}</dt><dd>${doctor.configCheck.exists ? t('doctor.yes') : t('doctor.no')}</dd></div>
+            <div><dt>${t('doctor.readable')}</dt><dd>${doctor.configCheck.readable ? t('doctor.yes') : t('doctor.no')}</dd></div>
+            <div><dt>${t('doctor.parse')}</dt><dd>${doctor.configCheck.parseValid ? t('doctor.validYaml') : t('doctor.invalidYaml')}</dd></div>
+          </dl>
+        </section>
+
+        <section class="card panel doctor-check-card">
+          <div class="panel-header panel-header-split">
+            <div class="doctor-check-heading">
+              <span class="doctor-check-title-icon" aria-hidden="true">${icon.shield}</span>
+              <h2>${t('doctor.desiredStateValidation')}</h2>
+            </div>
+            <span class="${validationStatusClass}">${getDoctorHealthLabel(doctor.validationCheck.status)}</span>
+          </div>
+          <p class="muted">${doctor.validationCheck.message}</p>
+          <dl class="doctor-detail-list">
+            <div><dt>${t('doctor.schemaValidation')}</dt><dd>${doctor.validationCheck.valid ? t('doctor.passed') : t('doctor.failed')}</dd></div>
+            ${
+              doctor.validationCheck.errors.length > 0
+                ? `<div><dt>${t('doctor.errors')}</dt><dd>${doctor.validationCheck.errors[0]}</dd></div>`
+                : ''
+            }
+          </dl>
+        </section>
+
+        <section class="card panel doctor-check-card">
+          <div class="panel-header panel-header-split">
+            <div class="doctor-check-heading">
+              <span class="doctor-check-title-icon" aria-hidden="true">${icon.sync}</span>
+              <h2>${t('doctor.syncStatus')}</h2>
+            </div>
+            <span class="${syncStatusClass}">${syncStatusLabel}</span>
+          </div>
+          <p class="muted">${doctor.syncCheck.message}</p>
+          <dl class="doctor-detail-list">
+            <div><dt>${t('doctor.status')}</dt><dd>${syncStatusLabel}</dd></div>
+            <div><dt>${t('doctor.outOfSyncClients')}</dt><dd>${doctor.syncCheck.outOfSyncCount}</dd></div>
+            <div><dt>${t('doctor.lastSync')}</dt><dd>${formatDateTime(doctor.syncCheck.lastSyncAt)}</dd></div>
+          </dl>
+        </section>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-header">
+          <h2>${t('doctor.adapterDetection')}</h2>
+          <p class="muted">${t('doctor.adapterDetectionDescription')}</p>
+        </div>
+        <div class="doctor-adapter-list">
+          ${doctor.adapters.map((adapter) => `
+            <div class="doctor-adapter-row">
+              <div class="doctor-adapter-main">
+                <span class="client-avatar client-avatar-${adapter.client}">${getClientAvatarLabel(adapter.client)}</span>
+                <div class="doctor-adapter-copy">
+                  <div class="doctor-adapter-name">${getClientDisplayName(adapter.client)}</div>
+                  <div class="doctor-adapter-path"><code>${adapter.configPath.replace(`${workspacePath}\\`, '')}</code></div>
+                </div>
+              </div>
+              <div class="doctor-adapter-meta">
+                <span class="${getDoctorAdapterClass(adapter.status)}">${getDoctorAdapterLabel(adapter.status)}</span>
+                <span class="pill pill-neutral">${adapter.toolCount} ${t('doctor.tools')}</span>
+                <button data-action="open-adapter-config" data-path="${adapter.configPath}" class="button secondary toolbar-button doctor-adapter-action" type="button" title="${t('doctor.openConfig')}">
+                  <span class="button-icon">${icon.open}</span>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+
+      <section class="doctor-bottom-grid">
+        <section class="card panel">
+          <div class="panel-header panel-header-split">
+            <div>
+              <h2>${t('doctor.backupSummary')}</h2>
+              <p class="muted">${doctor.backupSummary.message}</p>
+            </div>
+            <button data-action="open-backup-folder" class="button secondary toolbar-button" type="button">
+              <span>${t('doctor.viewBackups')}</span>
+            </button>
+          </div>
+          <dl class="doctor-detail-list">
+            <div><dt>${t('doctor.lastBackup')}</dt><dd>${formatDateTime(doctor.backupSummary.lastBackupAt)}</dd></div>
+            <div><dt>${t('doctor.backupCount')}</dt><dd>${doctor.backupSummary.backupCount}</dd></div>
+          </dl>
+          <div class="doctor-backup-list">
+            ${
+              doctor.backupSummary.items.length === 0
+                ? `<div class="list-empty">${t('doctor.noBackupsFound')}</div>`
+                : doctor.backupSummary.items.map((item) => `
+                    <div class="doctor-backup-item">
+                      <div class="doctor-backup-name">${item.name}</div>
+                      <div class="doctor-backup-time">${formatDateTime(item.createdAt)}</div>
+                    </div>
+                  `).join('')
+            }
+          </div>
+        </section>
+
+        <section class="card panel">
+          <div class="panel-header">
+            <h2>${t('doctor.warnings')}</h2>
+            <p class="muted">${doctor.warnings.length > 0 ? t('doctor.reviewWarnings') : ''}</p>
+          </div>
+          <div class="doctor-warning-list">
+            ${
+              doctor.warnings.length === 0
+                ? `<div class="list-empty">${t('doctor.noWarnings')}</div>`
+                : doctor.warnings.map((warning) => `
+                    <div class="doctor-warning-item">
+                      <span class="doctor-warning-dot doctor-warning-dot-${warning.level}" aria-hidden="true"></span>
+                      <div class="doctor-warning-copy">
+                        <div class="doctor-warning-title">${warning.message}</div>
+                        <div class="doctor-warning-source">${warning.source}</div>
+                      </div>
+                    </div>
+                  `).join('')
+            }
+          </div>
+        </section>
+      </section>
+    </div>
+  `
+}
 
 const renderSettingsSection = (): string => `
   <div class="settings-stack">
@@ -1582,7 +1891,7 @@ const renderWorkspaceBody = (): string => {
   }
 
   if (state.activeSection === 'doctor') {
-    return renderComingSoonSection(t('common.doctor'), t('common.diagnosticToolsComingSoon'))
+    return renderDoctorSection()
   }
 
   if (state.activeSection === 'settings') {
@@ -1642,6 +1951,107 @@ const renderWorkspaceHelpModal = (): string => {
         </div>
         <div class="modal-actions">
           <button data-action="close-workspace-help" class="button secondary">${t('common.close')}</button>
+        </div>
+      </section>
+    </div>
+  `
+}
+
+const renderGuideModal = (): string => {
+  if (!state.guideOpen) {
+    return ''
+  }
+
+  const steps = [
+    {
+      title: t('guide.step1.title'),
+      desc: t('guide.step1.desc'),
+      preview: `
+        <div class="guide-preview guide-preview-field">
+          <span class="button-icon">${icon.folder}</span>
+          <span class="guide-preview-primary">${t('guide.preview.workspace')}</span>
+          <span class="guide-preview-chevron">${icon.chevron}</span>
+        </div>
+      `,
+    },
+    {
+      title: t('guide.step2.title'),
+      desc: t('guide.step2.desc'),
+      preview: `
+        <div class="guide-preview guide-preview-file">
+          <div class="guide-preview-primary">${t('guide.preview.config')}</div>
+          <span class="pill pill-success">${t('guide.preview.created')}</span>
+        </div>
+      `,
+    },
+    {
+      title: t('guide.step3.title'),
+      desc: t('guide.step3.desc'),
+      preview: `
+        <div class="guide-preview guide-preview-tool">
+          <div>
+            <div class="guide-preview-primary">filesystem</div>
+            <div class="guide-preview-meta">File system operations</div>
+          </div>
+          <span class="guide-preview-plus">+</span>
+        </div>
+      `,
+    },
+    {
+      title: t('guide.step4.title'),
+      desc: t('guide.step4.desc'),
+      preview: `
+        <div class="guide-preview guide-preview-clients">
+          <span class="guide-preview-client-pill">CC</span>
+          <span class="guide-preview-client-pill">CX</span>
+          <span class="guide-preview-client-pill">CU</span>
+          <span class="guide-preview-check">✓</span>
+        </div>
+      `,
+    },
+    {
+      title: t('guide.step5.title'),
+      desc: t('guide.step5.desc'),
+      preview: `
+        <div class="guide-preview guide-preview-apply">
+          <span class="button-icon">${icon.checkCircle}</span>
+          <span class="guide-preview-primary">${t('guide.preview.apply')}</span>
+        </div>
+      `,
+    },
+  ]
+
+  return `
+    <div class="modal-backdrop" role="presentation" data-action="close-guide-backdrop">
+      <section class="modal modal-guide" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+        <button data-action="close-guide" class="modal-close" type="button" aria-label="${t('common.close')}">×</button>
+        <div class="modal-body modal-body-left">
+          <div class="guide-header">
+            <div class="guide-header-title-row">
+              <span class="guide-header-icon" aria-hidden="true">${icon.help}</span>
+              <h3 id="guide-modal-title">${t('guide.title')}</h3>
+            </div>
+            <p class="muted">${t('guide.subtitle')}</p>
+          </div>
+          <ol class="guide-steps">
+            ${steps
+              .map(
+                (step) => `
+                  <li class="guide-step">
+                    <div class="guide-step-main">
+                      <div class="guide-step-copy">
+                        <div class="guide-step-title">${step.title}</div>
+                        <div class="guide-step-desc">${step.desc}</div>
+                      </div>
+                    </div>
+                    <div class="guide-step-preview">
+                      ${step.preview}
+                    </div>
+                  </li>
+                `,
+              )
+              .join('')}
+          </ol>
         </div>
       </section>
     </div>
@@ -1724,6 +2134,7 @@ const bindActionHandlers = (): void => {
       if (state.workspace?.path === path) {
         state.workspace = null
         state.status = null
+        state.doctor = null
         state.plan = null
         state.selectedClient = null
         state.draftAssignments = clearDraftAssignments()
@@ -1968,6 +2379,29 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-guide"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.guideOpen = true
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="close-guide"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.guideOpen = false
+      render()
+    })
+  })
+
+  document.querySelectorAll<HTMLElement>('[data-action="close-guide-backdrop"]').forEach((backdrop) => {
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) {
+        state.guideOpen = false
+        render()
+      }
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-theme"]').forEach((button) => {
     button.addEventListener('click', () => {
       const nextThemeMode = state.theme === 'dark' ? 'light' : 'dark'
@@ -2068,6 +2502,41 @@ const bindActionHandlers = (): void => {
     })
   })
 
+  document.querySelectorAll<HTMLButtonElement>('[data-action="run-doctor-checks"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void loadDoctor()
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-backup-folder"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      if (!state.doctor) {
+        return
+      }
+
+      const result = await window.mcpspace.workspace.openInExplorer(state.doctor.backupSummary.backupDir)
+      if (!result.ok) {
+        state.error = result.error.message
+        render()
+      }
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-action="open-adapter-config"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const path = button.dataset.path
+      if (!path) {
+        return
+      }
+
+      const result = await window.mcpspace.workspace.openInExplorer(path)
+      if (!result.ok) {
+        state.error = result.error.message
+        render()
+      }
+    })
+  })
+
   document.querySelectorAll<HTMLButtonElement>('[data-action="select-section"]').forEach((button) => {
     button.addEventListener('click', () => {
       const section = button.dataset.section as ViewState['activeSection'] | undefined
@@ -2077,6 +2546,10 @@ const bindActionHandlers = (): void => {
 
       state.activeSection = section
       render()
+
+      if (section === 'doctor') {
+        void loadDoctor()
+      }
     })
   })
 }
@@ -2100,7 +2573,7 @@ const render = (): void => {
     doctor: {
       eyebrow: '',
       title: t('common.doctor'),
-      subtitle: t('common.diagnosticToolsComingSoon'),
+      subtitle: t('doctor.subtitle'),
     },
     settings: {
       eyebrow: '',
@@ -2155,6 +2628,7 @@ const render = (): void => {
             state.activeSection === 'workspaces'
               ? `
                 <div class="header-actions">
+                  <button data-action="open-guide" class="button secondary sync-button toolbar-button icon-button help-button" type="button" aria-label="${t('guide.help')}" title="${t('guide.help')}"><span class="button-icon">${icon.help}</span></button>
                   <button data-action="refresh-workspace" class="button secondary sync-button toolbar-button icon-button" type="button" ${disabledAttr(state.loading)} aria-label="${t('common.refresh')}" title="${t('common.refresh')}"><span class="button-icon">${icon.refresh}</span></button>
                 </div>
               `
@@ -2168,6 +2642,7 @@ const render = (): void => {
     </div>
       ${renderInitConfirmModal()}
       ${renderWorkspaceHelpModal()}
+      ${renderGuideModal()}
       ${renderSyncConfirmModal()}
       ${renderAddToolModal()}
     ${renderRemoveToolModal()}
@@ -2204,6 +2679,7 @@ const clearReadyWorkspace = (): void => {
 const loadWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
+  state.doctor = null
   state.initConfirmOpen = false
   state.activeSection = 'workspaces'
   render()
@@ -2251,6 +2727,7 @@ const loadWorkspace = async (): Promise<void> => {
 const openWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
+  state.doctor = null
   state.initConfirmOpen = false
   state.activeSection = 'workspaces'
   render()
@@ -2296,6 +2773,7 @@ const openWorkspacePath = async (workspacePath: string): Promise<void> => {
 
   state.loading = true
   state.error = null
+  state.doctor = null
   state.initConfirmOpen = false
   state.activeSection = 'workspaces'
   render()
@@ -2337,6 +2815,7 @@ const openWorkspacePath = async (workspacePath: string): Promise<void> => {
 const initializeWorkspace = async (): Promise<void> => {
   state.loading = true
   state.error = null
+  state.doctor = null
   state.activeSection = 'workspaces'
   render()
 

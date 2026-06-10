@@ -4,6 +4,7 @@ import type {
   McpCatalogListDto,
   SyncPlanDto,
   WorkspaceContextDto,
+  WorkspaceDoctorDto,
   WorkspaceStatusDto,
 } from '../../shared/dtos.js'
 import type { WorkspaceMcpAddOptions } from '../../main/ipc/types.js'
@@ -17,6 +18,7 @@ declare global {
         init(): Promise<IpcResult<WorkspaceContextDto>>
         current(): Promise<IpcResult<WorkspaceContextDto | null>>
         status(): Promise<IpcResult<WorkspaceStatusDto>>
+        doctor(): Promise<IpcResult<WorkspaceDoctorDto>>
         attach(toolName: string, client: ClientId): Promise<IpcResult<SyncPlanDto>>
         detach(toolName: string, client: ClientId): Promise<IpcResult<SyncPlanDto>>
         plan(client: ClientId): Promise<IpcResult<SyncPlanDto>>

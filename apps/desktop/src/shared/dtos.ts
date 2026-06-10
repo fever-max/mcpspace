@@ -101,3 +101,63 @@ export type WorkspaceStatusDto = {
   inSyncCount: number
   notConfiguredCount: number
 }
+
+export type DoctorHealthStatus = 'healthy' | 'warning' | 'error'
+
+export type DoctorAdapterStatus = 'healthy' | 'warning' | 'not_detected'
+
+export type DoctorWarningLevel = 'warning' | 'error'
+
+export type WorkspaceDoctorDto = {
+  overall: {
+    status: DoctorHealthStatus
+    lastCheckedAt: string
+    workspaceName: string
+    lastSyncAt: string | null
+    message: string
+  }
+  configCheck: {
+    status: DoctorHealthStatus
+    path: string
+    exists: boolean
+    readable: boolean
+    parseValid: boolean
+    message: string
+  }
+  validationCheck: {
+    status: DoctorHealthStatus
+    valid: boolean
+    errors: string[]
+    message: string
+  }
+  syncCheck: {
+    status: DoctorHealthStatus
+    outOfSyncCount: number
+    lastSyncAt: string | null
+    message: string
+  }
+  adapters: Array<{
+    client: ClientId
+    status: DoctorAdapterStatus
+    toolCount: number
+    configExists: boolean
+    configPath: string
+    message: string
+  }>
+  backupSummary: {
+    status: DoctorHealthStatus
+    lastBackupAt: string | null
+    backupCount: number
+    backupDir: string
+    message: string
+    items: Array<{
+      name: string
+      createdAt: string
+    }>
+  }
+  warnings: Array<{
+    level: DoctorWarningLevel
+    source: string
+    message: string
+  }>
+}

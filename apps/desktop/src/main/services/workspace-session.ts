@@ -1,12 +1,15 @@
 import { existsSync } from 'node:fs'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, resolve } from 'node:path'
+import { parse as parseYaml } from 'yaml'
 
 import {
   FileAtomicWriter,
   FileConfigLoader,
   FileStateRepository,
   type ConfigLoader,
+  McpspaceConfigSchema,
   type McpspaceConfig,
   type PathResolver,
   type StateRepository,
@@ -36,6 +39,7 @@ import {
   type McpCatalogEntryDto,
   type McpCatalogListDto,
   type McpConfigDto,
+  type WorkspaceDoctorDto,
   type WorkspaceContextDto,
   type WorkspaceContextStatus,
   type WorkspaceStatusDto,
@@ -49,7 +53,9 @@ const createDefaultConfig = (): McpspaceConfig => ({
 
 type WorkspaceRuntime = {
   workspacePath: string
+  pathResolver: PathResolver
   configLoader: ConfigLoader
+  stateRepository: StateRepository
   desiredStateRepository: FileDesiredStateRepository
   workspaceService: WorkspaceService
   mcpRegistryService: McpRegistryService
@@ -129,7 +135,9 @@ const createWorkspaceRuntime = (workspacePath: string): WorkspaceRuntime => {
 
   return {
     workspacePath,
+    pathResolver,
     configLoader,
+    stateRepository,
     desiredStateRepository,
     workspaceService: new DefaultWorkspaceService(
       configLoader,
@@ -143,6 +151,28 @@ const createWorkspaceRuntime = (workspacePath: string): WorkspaceRuntime => {
 }
 
 const toSorted = (values: Iterable<string>): string[] => Array.from(values).sort()
+
+const doctorClientOrder: ClientId[] = ['codex', 'claude-code', 'cursor']
+
+const getClientConfigPath = (workspacePath: string, client: ClientId): string => {
+  if (client === 'codex') {
+    return resolve(workspacePath, '.codex', 'config.toml')
+  }
+
+  if (client === 'claude-code') {
+    return resolve(workspacePath, '.mcp.json')
+  }
+
+  return resolve(workspacePath, '.cursor', 'mcp.json')
+}
+
+const getLatestTimestamp = (timestamps: Iterable<string>): string | null => {
+  const sorted = Array.from(timestamps)
+    .filter((value) => value.length > 0)
+    .sort((left, right) => right.localeCompare(left))
+
+  return sorted[0] ?? null
+}
 
 const toWorkspaceContext = (
   workspacePath: string,
@@ -346,6 +376,233 @@ export class WorkspaceSession {
       outOfSyncCount,
       inSyncCount,
       notConfiguredCount,
+    }
+  }
+
+  async doctor(): Promise<WorkspaceDoctorDto> {
+    if (!this.currentWorkspace) {
+      throw new Error('No workspace selected.')
+    }
+
+    const workspace = this.currentWorkspace
+    const runtime = workspace.status === 'ready'
+      ? this.ensureRuntime()
+      : createWorkspaceRuntime(workspace.path)
+    const warnings: WorkspaceDoctorDto['warnings'] = []
+    const lastCheckedAt = new Date().toISOString()
+    const state = await runtime.stateRepository.load()
+    const lastSyncAt = getLatestTimestamp(Object.values(state.lastSync))
+
+    const configPath = workspace.configPath
+    const configExists = existsSync(configPath)
+    let configReadable = false
+    let parseValid = false
+    let parsedConfig: unknown = null
+    let parseMessage = 'Config file not found.'
+
+    if (configExists) {
+      try {
+        const rawConfig = await readFile(configPath, 'utf-8')
+        configReadable = true
+        parsedConfig = parseYaml(rawConfig)
+        parseValid = true
+        parseMessage = 'Config file is valid YAML.'
+      } catch (error) {
+        parseMessage = error instanceof Error ? error.message : 'Failed to read config file.'
+      }
+    }
+
+    const configCheck: WorkspaceDoctorDto['configCheck'] = {
+      status: !configExists ? 'warning' : configReadable && parseValid ? 'healthy' : 'error',
+      path: configPath,
+      exists: configExists,
+      readable: configReadable,
+      parseValid,
+      message: parseMessage,
+    }
+
+    if (!configExists) {
+      warnings.push({
+        level: 'warning',
+        source: 'config',
+        message: `${basename(configPath)} was not found.`,
+      })
+    } else if (!configReadable || !parseValid) {
+      warnings.push({
+        level: 'error',
+        source: 'config',
+        message: parseMessage,
+      })
+    }
+
+    const validation = parseValid ? McpspaceConfigSchema.safeParse(parsedConfig) : null
+    const validationErrors = validation && !validation.success
+      ? validation.error.issues.map((issue) => issue.message)
+      : []
+
+    const validationCheck: WorkspaceDoctorDto['validationCheck'] = validation?.success
+      ? {
+          status: 'healthy',
+          valid: true,
+          errors: [],
+          message: 'Configuration schema is valid.',
+        }
+      : {
+          status: configExists ? 'error' : 'warning',
+          valid: false,
+          errors: validationErrors,
+          message: configExists
+            ? validationErrors[0] ?? 'Configuration schema validation failed.'
+            : 'Config file is missing, so schema validation could not run.',
+        }
+
+    if (!validationCheck.valid) {
+      warnings.push({
+        level: configExists ? 'error' : 'warning',
+        source: 'validation',
+        message: validationCheck.message,
+      })
+    }
+
+    let workspaceStatus: WorkspaceStatusDto | null = null
+    if (workspace.status === 'ready' && validation?.success) {
+      try {
+        workspaceStatus = await this.status()
+      } catch (error) {
+        warnings.push({
+          level: 'error',
+          source: 'sync',
+          message: error instanceof Error ? error.message : 'Failed to load workspace status.',
+        })
+      }
+    }
+
+    const syncCheck: WorkspaceDoctorDto['syncCheck'] = workspaceStatus
+      ? {
+          status: workspaceStatus.outOfSyncCount > 0 ? 'warning' : 'healthy',
+          outOfSyncCount: workspaceStatus.outOfSyncCount,
+          lastSyncAt,
+          message: workspaceStatus.outOfSyncCount > 0
+            ? `${workspaceStatus.outOfSyncCount} client(s) are out of sync.`
+            : 'All clients are in sync with the desired state.',
+        }
+      : {
+          status: workspace.status === 'ready' ? 'warning' : 'warning',
+          outOfSyncCount: 0,
+          lastSyncAt,
+          message: workspace.status === 'ready'
+            ? 'Sync status could not be evaluated.'
+            : 'Initialize the workspace to evaluate sync status.',
+        }
+
+    if (workspaceStatus && workspaceStatus.outOfSyncCount > 0) {
+      warnings.push({
+        level: 'warning',
+        source: 'sync',
+        message: `${workspaceStatus.outOfSyncCount} client(s) are out of sync.`,
+      })
+    }
+
+    const desiredState = validation?.success ? validation.data : createDefaultConfig()
+    const adapters: WorkspaceDoctorDto['adapters'] = doctorClientOrder.map((client) => {
+      const toolCount = desiredState.clients[client]?.mcps.length ?? 0
+      const clientConfigPath = getClientConfigPath(workspace.path, client)
+      const configExistsForClient = existsSync(clientConfigPath)
+
+      let status: WorkspaceDoctorDto['adapters'][number]['status'] = 'healthy'
+      let message = 'Client config file exists.'
+
+      if (!configExistsForClient && toolCount > 0) {
+        status = 'warning'
+        message = 'Client config file is missing.'
+        warnings.push({
+          level: 'warning',
+          source: client,
+          message: `${client} config file was not found.`,
+        })
+      } else if (!configExistsForClient) {
+        status = 'not_detected'
+        message = 'Client config file was not detected.'
+      }
+
+      return {
+        client,
+        status,
+        toolCount,
+        configExists: configExistsForClient,
+        configPath: clientConfigPath,
+        message,
+      }
+    })
+
+    const backupDir = runtime.pathResolver.getBackupDir()
+    let backupCount = 0
+    let backupItems: Array<{ name: string; createdAt: string }> = []
+
+    if (existsSync(backupDir)) {
+      const entries = await readdir(backupDir)
+      const withStats = await Promise.all(
+        entries.map(async (name) => {
+          const path = resolve(backupDir, name)
+          const entryStats = await stat(path)
+          return entryStats.isFile()
+            ? { name, createdAt: entryStats.mtime.toISOString() }
+            : null
+        }),
+      )
+
+      backupItems = withStats
+        .filter((entry): entry is { name: string; createdAt: string } => entry !== null)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      backupCount = backupItems.length
+      backupItems = backupItems.slice(0, 3)
+    }
+
+    const backupSummary: WorkspaceDoctorDto['backupSummary'] = {
+      status: backupCount > 0 ? 'healthy' : 'warning',
+      lastBackupAt: backupItems[0]?.createdAt ?? null,
+      backupCount,
+      backupDir,
+      message: backupCount > 0
+        ? `${backupCount} backup(s) available.`
+        : 'No backups found yet.',
+      items: backupItems,
+    }
+
+    if (backupCount === 0) {
+      warnings.push({
+        level: 'warning',
+        source: 'backup',
+        message: 'No backups were found.',
+      })
+    }
+
+    const overallStatus: WorkspaceDoctorDto['overall']['status'] = warnings.some((warning) => warning.level === 'error')
+      ? 'error'
+      : warnings.length > 0
+        ? 'warning'
+        : 'healthy'
+
+    const overallMessage = overallStatus === 'healthy'
+      ? 'No issues detected.'
+      : overallStatus === 'error'
+        ? 'Errors were found that need attention.'
+        : 'Warnings were found that should be reviewed.'
+
+    return {
+      overall: {
+        status: overallStatus,
+        lastCheckedAt,
+        workspaceName: workspace.name,
+        lastSyncAt,
+        message: overallMessage,
+      },
+      configCheck,
+      validationCheck,
+      syncCheck,
+      adapters,
+      backupSummary,
+      warnings,
     }
   }
 

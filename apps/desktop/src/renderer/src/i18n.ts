@@ -98,6 +98,46 @@ type I18nKey =
   | 'common.marketplaceComingSoon'
   | 'common.workspaces'
   | 'common.settingsTitle'
+  | 'doctor.subtitle'
+  | 'doctor.noWorkspaceTitle'
+  | 'doctor.noWorkspaceDescription'
+  | 'doctor.runningChecks'
+  | 'doctor.runChecksToDiagnose'
+  | 'doctor.healthy'
+  | 'doctor.warning'
+  | 'doctor.error'
+  | 'doctor.notDetected'
+  | 'doctor.neverSynced'
+  | 'doctor.configFileCheck'
+  | 'doctor.path'
+  | 'doctor.exists'
+  | 'doctor.readable'
+  | 'doctor.parse'
+  | 'doctor.yes'
+  | 'doctor.no'
+  | 'doctor.validYaml'
+  | 'doctor.invalidYaml'
+  | 'doctor.desiredStateValidation'
+  | 'doctor.schemaValidation'
+  | 'doctor.passed'
+  | 'doctor.failed'
+  | 'doctor.errors'
+  | 'doctor.syncStatus'
+  | 'doctor.status'
+  | 'doctor.outOfSyncClients'
+  | 'doctor.lastSync'
+  | 'doctor.adapterDetection'
+  | 'doctor.adapterDetectionDescription'
+  | 'doctor.openConfig'
+  | 'doctor.tools'
+  | 'doctor.backupSummary'
+  | 'doctor.viewBackups'
+  | 'doctor.lastBackup'
+  | 'doctor.backupCount'
+  | 'doctor.noBackupsFound'
+  | 'doctor.warnings'
+  | 'doctor.reviewWarnings'
+  | 'doctor.noWarnings'
   | 'settings.title'
   | 'settings.subtitle'
   | 'settings.section.general'
@@ -130,6 +170,25 @@ type I18nKey =
   | 'sync.confirm.description'
   | 'sync.confirm.apply'
   | 'sync.confirm.cancel'
+  | 'guide.title'
+  | 'guide.subtitle'
+  | 'guide.step1.title'
+  | 'guide.step1.desc'
+  | 'guide.step2.title'
+  | 'guide.step2.desc'
+  | 'guide.step3.title'
+  | 'guide.step3.desc'
+  | 'guide.step4.title'
+  | 'guide.step4.desc'
+  | 'guide.step5.title'
+  | 'guide.step5.desc'
+  | 'guide.help'
+  | 'guide.preview.workspace'
+  | 'guide.preview.config'
+  | 'guide.preview.created'
+  | 'guide.preview.add'
+  | 'guide.preview.clients'
+  | 'guide.preview.apply'
 
 const STORAGE_KEY = 'mcpspace.lang'
 
@@ -231,6 +290,46 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.marketplaceComingSoon': 'Marketplace is coming soon.',
     'common.workspaces': 'Workspaces',
     'common.settingsTitle': 'Settings',
+    'doctor.subtitle': 'Diagnose workspace health and configuration.',
+    'doctor.noWorkspaceTitle': 'No workspace selected',
+    'doctor.noWorkspaceDescription': 'Open a workspace first to run health checks.',
+    'doctor.runningChecks': 'Running diagnostics...',
+    'doctor.runChecksToDiagnose': 'Run checks to inspect workspace health.',
+    'doctor.healthy': 'Healthy',
+    'doctor.warning': 'Warning',
+    'doctor.error': 'Error',
+    'doctor.notDetected': 'Not Detected',
+    'doctor.neverSynced': 'Never synced',
+    'doctor.configFileCheck': 'Config File Check',
+    'doctor.path': 'Path',
+    'doctor.exists': 'Exists',
+    'doctor.readable': 'Readable',
+    'doctor.parse': 'Parse',
+    'doctor.yes': 'Yes',
+    'doctor.no': 'No',
+    'doctor.validYaml': 'Valid YAML',
+    'doctor.invalidYaml': 'Invalid YAML',
+    'doctor.desiredStateValidation': 'Desired State Validation',
+    'doctor.schemaValidation': 'Schema Validation',
+    'doctor.passed': 'Passed',
+    'doctor.failed': 'Failed',
+    'doctor.errors': 'Errors',
+    'doctor.syncStatus': 'Sync Status',
+    'doctor.status': 'Status',
+    'doctor.outOfSyncClients': 'Out of Sync Clients',
+    'doctor.lastSync': 'Last Sync',
+    'doctor.adapterDetection': 'Adapter Detection',
+    'doctor.adapterDetectionDescription': 'Detected MCP adapters and client configuration files.',
+    'doctor.openConfig': 'Open Config',
+    'doctor.tools': 'tools',
+    'doctor.backupSummary': 'Backup Summary',
+    'doctor.viewBackups': 'View Backups',
+    'doctor.lastBackup': 'Last Backup',
+    'doctor.backupCount': 'Backup Count',
+    'doctor.noBackupsFound': 'No backups found.',
+    'doctor.warnings': 'Warnings',
+    'doctor.reviewWarnings': 'Review the items that need attention.',
+    'doctor.noWarnings': 'No warnings detected.',
     'settings.title': 'Settings',
     'settings.subtitle': 'Customize the app language and workspace behavior.',
     'settings.section.general': 'General',
@@ -263,6 +362,25 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'sync.confirm.description': 'This will sync the selected AI client and update its config file.',
     'sync.confirm.apply': 'Apply',
     'sync.confirm.cancel': 'Cancel',
+    'guide.help': 'Help',
+    'guide.title': 'How to use mcpspace',
+    'guide.subtitle': 'Manage MCP tools for your AI clients in five steps.',
+    'guide.step1.title': '1. Open a workspace',
+    'guide.step1.desc': 'Open a project folder. mcpspace manages MCP tools per folder.',
+    'guide.step2.title': '2. Initialize',
+    'guide.step2.desc': 'Create .mcpspace/config.yaml in the folder to start managing tools.',
+    'guide.step3.title': '3. Add MCP tools',
+    'guide.step3.desc': 'Click "Add MCP" to pick tools from the catalog or enter a custom command.',
+    'guide.step4.title': '4. Connect to AI clients',
+    'guide.step4.desc': 'Select an AI client (Claude Code, Codex, Cursor) and check the tools to attach.',
+    'guide.step5.title': '5. Apply changes',
+    'guide.step5.desc': 'Review the changes and click "Apply Changes" to write them to the client config.',
+    'guide.preview.workspace': 'my-project',
+    'guide.preview.config': 'config.yaml',
+    'guide.preview.created': 'Created',
+    'guide.preview.add': 'Add',
+    'guide.preview.clients': 'Clients',
+    'guide.preview.apply': 'Apply Changes',
   },
   ko: {
     'common.workspace': '작업 폴더',
@@ -361,6 +479,46 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.marketplaceComingSoon': '마켓플레이스는 곧 제공됩니다.',
     'common.workspaces': '작업 폴더',
     'common.settingsTitle': '설정',
+    'doctor.subtitle': '작업 폴더 상태와 설정을 진단합니다.',
+    'doctor.noWorkspaceTitle': '선택된 작업 폴더가 없습니다',
+    'doctor.noWorkspaceDescription': '진단을 실행하려면 먼저 작업 폴더를 여세요.',
+    'doctor.runningChecks': '진단을 실행하는 중입니다...',
+    'doctor.runChecksToDiagnose': '검사를 실행해 작업 폴더 상태를 확인하세요.',
+    'doctor.healthy': '정상',
+    'doctor.warning': '주의',
+    'doctor.error': '오류',
+    'doctor.notDetected': '감지 안 됨',
+    'doctor.neverSynced': '동기화 기록 없음',
+    'doctor.configFileCheck': '설정 파일 확인',
+    'doctor.path': '경로',
+    'doctor.exists': '존재 여부',
+    'doctor.readable': '읽기 가능',
+    'doctor.parse': '파싱',
+    'doctor.yes': '예',
+    'doctor.no': '아니오',
+    'doctor.validYaml': '유효한 YAML',
+    'doctor.invalidYaml': '유효하지 않은 YAML',
+    'doctor.desiredStateValidation': 'Desired State 검증',
+    'doctor.schemaValidation': '스키마 검증',
+    'doctor.passed': '통과',
+    'doctor.failed': '실패',
+    'doctor.errors': '오류',
+    'doctor.syncStatus': '동기화 상태',
+    'doctor.status': '상태',
+    'doctor.outOfSyncClients': '동기화 안 된 클라이언트',
+    'doctor.lastSync': '마지막 동기화',
+    'doctor.adapterDetection': '어댑터 감지',
+    'doctor.adapterDetectionDescription': '감지된 MCP 어댑터와 클라이언트 설정 파일을 표시합니다.',
+    'doctor.openConfig': '설정 파일 열기',
+    'doctor.tools': '개 도구',
+    'doctor.backupSummary': '백업 요약',
+    'doctor.viewBackups': '백업 보기',
+    'doctor.lastBackup': '마지막 백업',
+    'doctor.backupCount': '백업 개수',
+    'doctor.noBackupsFound': '백업이 없습니다.',
+    'doctor.warnings': '주의 항목',
+    'doctor.reviewWarnings': '확인이 필요한 항목입니다.',
+    'doctor.noWarnings': '주의 항목이 없습니다.',
     'settings.title': '설정',
     'settings.subtitle': '앱 언어와 작업 폴더 동작을 조정합니다.',
     'settings.section.general': '일반',
@@ -393,6 +551,25 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'sync.confirm.description': '선택한 AI 클라이언트를 동기화하여 설정 파일을 갱신합니다.',
     'sync.confirm.apply': '적용',
     'sync.confirm.cancel': '취소',
+    'guide.help': '도움말',
+    'guide.title': 'mcpspace 사용법',
+    'guide.subtitle': '다섯 단계로 AI 클라이언트의 MCP 도구를 관리하세요.',
+    'guide.step1.title': '1. 작업 폴더 열기',
+    'guide.step1.desc': '프로젝트 폴더를 엽니다. mcpspace는 폴더별로 MCP 도구를 관리합니다.',
+    'guide.step2.title': '2. 초기화',
+    'guide.step2.desc': '폴더에 .mcpspace/config.yaml을 생성해 도구 관리를 시작합니다.',
+    'guide.step3.title': '3. MCP 도구 추가',
+    'guide.step3.desc': '"Add MCP"를 눌러 카탈로그에서 도구를 고르거나 직접 커맨드를 입력합니다.',
+    'guide.step4.title': '4. AI 클라이언트에 연결',
+    'guide.step4.desc': 'AI 클라이언트(Claude Code, Codex, Cursor)를 선택하고 연결할 도구를 체크합니다.',
+    'guide.step5.title': '5. 변경 적용',
+    'guide.step5.desc': '변경 사항을 검토하고 "변경 적용"을 눌러 클라이언트 설정에 반영합니다.',
+    'guide.preview.workspace': 'my-project',
+    'guide.preview.config': 'config.yaml',
+    'guide.preview.created': '생성됨',
+    'guide.preview.add': '추가',
+    'guide.preview.clients': '클라이언트',
+    'guide.preview.apply': '변경 적용',
   },
 }
 
