@@ -32,6 +32,7 @@ type ViewState = {
   addToolCommand: string
   addToolArgs: string
   addToolPackage: string
+  addToolEnv: string
   catalogTools: McpCatalogEntryDto[]
   catalogLoading: boolean
   catalogSearch: string
@@ -157,6 +158,7 @@ const state: ViewState = {
   addToolCommand: 'npx',
   addToolArgs: '-y\n@modelcontextprotocol/server-filesystem\n.',
   addToolPackage: '',
+  addToolEnv: '',
   catalogTools: [],
   catalogLoading: false,
   catalogSearch: '',
@@ -836,6 +838,7 @@ const toggleCatalogTool = (tool: McpCatalogEntryDto): void => {
     state.addToolCommand = tool.command
     state.addToolArgs = tool.args.join('\n')
     state.addToolPackage = tool.package
+    state.addToolEnv = envToText(tool.env)
   }
 
   state.error = null
@@ -844,6 +847,25 @@ const toggleCatalogTool = (tool: McpCatalogEntryDto): void => {
 
 const getSelectedCatalogTools = (): McpCatalogEntryDto[] =>
   state.catalogTools.filter((tool) => state.catalogSelectedToolNames.includes(tool.toolName))
+
+const envToText = (env: Record<string, string>): string =>
+  Object.entries(env)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n')
+
+const parseEnvText = (text: string): Record<string, string> => {
+  const result: Record<string, string> = {}
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const eq = trimmed.indexOf('=')
+    if (eq === -1) continue
+    const key = trimmed.slice(0, eq).trim()
+    if (!key) continue
+    result[key] = trimmed.slice(eq + 1).trim()
+  }
+  return result
+}
 
 const openAddToolModal = (): void => {
   state.toolModalMode = 'add'
@@ -854,6 +876,7 @@ const openAddToolModal = (): void => {
   state.addToolCommand = 'npx'
   state.addToolArgs = ''
   state.addToolPackage = ''
+  state.addToolEnv = ''
   state.catalogTools = []
   state.catalogLoading = true
   state.catalogSearch = ''
@@ -872,6 +895,7 @@ const openEditToolModal = (tool: WorkspaceStatusDto['tools'][number]): void => {
   state.addToolCommand = tool.command
   state.addToolArgs = tool.args.join('\n')
   state.addToolPackage = tool.package ?? ''
+  state.addToolEnv = envToText(tool.env)
   state.catalogSelectedToolNames = []
   state.error = null
   render()
@@ -894,6 +918,7 @@ const saveTool = async (
   command: string,
   args: string[],
   toolPackage: string,
+  env: Record<string, string>,
   mode: 'add' | 'edit' | null,
   originalName: string | null,
 ): Promise<boolean> => {
@@ -910,11 +935,13 @@ const saveTool = async (
       ? await window.mcpspace.workspace.mcpUpdate(originalName, toolName, {
           command,
           args,
+          env,
           package: toolPackage,
         })
       : await window.mcpspace.workspace.mcpAdd(toolName, {
           command,
           args,
+          env,
           package: toolPackage,
         })
   if (!result.ok) {
@@ -1010,6 +1037,10 @@ const renderMcpManualForm = (primaryLabel: string, title: string, description: s
         <label class="modal-field">
           <span class="modal-field-label">${t('common.package')}</span>
           <input data-action="add-tool-package" class="modal-input" type="text" value="${state.addToolPackage}" placeholder="@modelcontextprotocol/server-filesystem" ${disabledAttr(state.loading)} />
+        </label>
+        <label class="modal-field">
+          <span class="modal-field-label">${t('common.env')}</span>
+          <textarea data-action="add-tool-env" class="modal-textarea" rows="3" placeholder="API_KEY=your-key&#10;DB_URL=postgresql://..." ${disabledAttr(state.loading)}>${state.addToolEnv}</textarea>
         </label>
       </div>
       <div class="modal-actions modal-actions-right">
@@ -2226,13 +2257,14 @@ const bindActionHandlers = (): void => {
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
       const toolPackage = state.addToolPackage.trim()
+      const env = parseEnvText(state.addToolEnv)
       const selectedCatalogTools = getSelectedCatalogTools()
       const catalogMode = state.addToolModalTab === 'catalog' && mode === 'add'
 
       if (catalogMode) {
         let allSucceeded = true
         for (const tool of selectedCatalogTools) {
-          const success = await saveTool(tool.toolName, tool.command, tool.args, tool.package, 'add', null)
+          const success = await saveTool(tool.toolName, tool.command, tool.args, tool.package, tool.env, 'add', null)
           if (!success) {
             allSucceeded = false
             break
@@ -2244,7 +2276,7 @@ const bindActionHandlers = (): void => {
         return
       }
 
-      const success = await saveTool(toolName, command, args, toolPackage, mode, originalName)
+      const success = await saveTool(toolName, command, args, toolPackage, env, mode, originalName)
       if (success) {
         closeAddToolModal()
       }
@@ -2320,6 +2352,12 @@ const bindActionHandlers = (): void => {
   document.querySelectorAll<HTMLTextAreaElement>('[data-action="add-tool-args"]').forEach((textarea) => {
     textarea.addEventListener('input', () => {
       state.addToolArgs = textarea.value
+    })
+  })
+
+  document.querySelectorAll<HTMLTextAreaElement>('[data-action="add-tool-env"]').forEach((textarea) => {
+    textarea.addEventListener('input', () => {
+      state.addToolEnv = textarea.value
     })
   })
 

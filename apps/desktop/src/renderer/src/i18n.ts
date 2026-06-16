@@ -29,6 +29,7 @@ type I18nKey =
   | 'common.command'
   | 'common.args'
   | 'common.package'
+  | 'common.env'
   | 'common.loadingChanges'
   | 'common.initializeWorkspaceQuestion'
   | 'common.initializeWorkspaceInfoTitle'
@@ -224,6 +225,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.command': 'Command',
     'common.args': 'Args',
     'common.package': 'Package',
+    'common.env': 'Environment variables (KEY=VALUE per line)',
     'common.loadingChanges': 'Loading changes...',
     'common.initializeWorkspaceQuestion': 'Initialize workspace?',
     'common.initializeWorkspaceInfoTitle': 'What happens when you initialize?',
@@ -413,6 +415,7 @@ const messages: Record<Lang, Record<I18nKey, string>> = {
     'common.command': '명령어',
     'common.args': '인수',
     'common.package': '패키지',
+    'common.env': '환경 변수 (한 줄에 KEY=VALUE)',
     'common.loadingChanges': '변경 사항을 불러오는 중...',
     'common.initializeWorkspaceQuestion': '작업 폴더를 초기화할까요?',
     'common.initializeWorkspaceInfoTitle': '초기화하면 어떻게 되나요?',

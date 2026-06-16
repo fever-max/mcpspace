@@ -44,6 +44,48 @@ const toEnvRecord = (value: unknown): Record<string, string> | undefined => {
   return Object.keys(env).length > 0 ? env : undefined
 }
 
+const isBareKey = (key: string): boolean => /^[A-Za-z0-9_-]+$/.test(key)
+
+const encKey = (key: string): string => (isBareKey(key) ? key : JSON.stringify(key))
+
+// JSON string escaping is a valid subset of TOML basic-string escaping.
+const encValue = (value: unknown): string => {
+  if (typeof value === 'string') return JSON.stringify(value)
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) return `[${value.map(encValue).join(', ')}]`
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+    return `{ ${entries.map(([k, v]) => `${encKey(k)} = ${encValue(v)}`).join(', ')} }`
+  }
+  return '""'
+}
+
+// Serialize the mcp_servers section ourselves so that `env` is written as an
+// inline table (`env = { K = "v" }`) — the form Codex expects — instead of the
+// nested sub-table (`[mcp_servers.X.env]`) that @iarna/toml emits.
+const stringifyMcpServers = (servers: Record<string, unknown>): string => {
+  const blocks: string[] = []
+  for (const [name, raw] of Object.entries(servers)) {
+    if (!raw || typeof raw !== 'object') continue
+    const entry = raw as Record<string, unknown>
+    const lines = [`[mcp_servers.${encKey(name)}]`]
+    for (const [key, val] of Object.entries(entry)) {
+      if (val === undefined) continue
+      if (
+        key === 'env' &&
+        val &&
+        typeof val === 'object' &&
+        Object.keys(val as Record<string, unknown>).length === 0
+      ) {
+        continue // omit empty env
+      }
+      lines.push(`${encKey(key)} = ${encValue(val)}`)
+    }
+    blocks.push(lines.join('\n'))
+  }
+  return blocks.join('\n\n')
+}
+
 const toActualState = (clientName: string, tomlConfig: TomlObject): ActualState => {
   const root = tomlConfig.mcp_servers
   const mcpServersNode = root && typeof root === 'object' ? (root as Record<string, unknown>) : {}
@@ -147,10 +189,15 @@ export class CodexAdapter implements ClientAdapter {
       }
     }
 
-    parsed.mcp_servers = mcpServers
+    // Serialize non-mcp_servers config with @iarna/toml, then append the
+    // mcp_servers section with inline `env` tables.
+    delete parsed.mcp_servers
+    const restToml = TOML.stringify(parsed).trim()
+    const mcpToml = stringifyMcpServers(mcpServers)
+    const output = [restToml, mcpToml].filter((part) => part.length > 0).join('\n\n') + '\n'
 
     await mkdir(dirname(this.configPath), { recursive: true })
-    await writeFile(this.configPath, TOML.stringify(parsed), 'utf-8')
+    await writeFile(this.configPath, output, 'utf-8')
   }
 
   async backup(): Promise<string> {
